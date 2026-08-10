@@ -1,6 +1,4 @@
-# 🌤️ skala-vue: Weather Dashboard
-
-Vue 3 + Vite 기반 실시간 날씨 대시보드 프로젝트.
+# 🌤️ skala-vue
 
 ---
 
@@ -23,37 +21,86 @@ npm run format
 
 ---
 
-## 📝 Day 1 학습 내용 요약
+## 📝 Day 1
 
-### 1. 웹 아키텍처 & 도구 핵심 개념
+### 1. 학습내용정리
 
-#### 📌 추가된 핵심 내용
-
-1. **npx vs Vite**:
+1. **npx(패키지설치) vs Vite(빌드실행)**:
    - `npx`: npm 패키지 1회성 실행기 (글로벌 설치 불필요).
    - `Vite`: ESM 기반 개발 서버 & 프로덕션 번들러 (HMR).
 2. **CSR vs SSR**:
-   - `CSR`: 빈 HTML + JS 전달 → 브라우저가 렌더링.
-   - `SSR`: 서버가 완성된 HTML 전달 → 초기 렌더링 빠름.
+   - `CSR(클라이언트사이드랜더링)`: 빈 HTML + JS 전달 → 브라우저가 렌더링.
+   - `SSR(서버사이드랜더링)`: 서버가 완성된 HTML 전달 → 초기 렌더링 빠름.
 3. **SPA가 SEO에 불리한 이유**:
    - 최초 응답이 빈 HTML (`<div id="app"></div>`).
    - 크롤러가 JS 실행 전 빈 껍데기만 수집해 색인 불가. (해결: Nuxt.js SSR / SSG).
 
-### 2. Vue.js & Vite 기초
+### 2. 실습내용
 
-- **Composition API**: `<script setup>` 기반. 로직 응집도 및 재사용성 향상.
-- **SFC (Single File Component)**: `<template>`, `<script setup>`, `<style scoped>` 구조.
-- **가상 DOM (Virtual DOM)**: 변경점만 Diffing 렌더링하여 고성능 유지.
+#### 1. 반응형 데이터 확인
 
-### 3. Vue 템플릿 문법 & 디렉티브
+1. 일반 변수와 반응형 변수의 비교
+   
+   ```jsx
+   // .src/components/practices/basic/SampleOne.vue
+   <script setup>
+   import { ref } from 'vue'
+   
+   // 1. 일반 변수 (실시간으로 바뀌지 않음)
+   let normalCount = 0
+   // 2. 반응형 변수 (실시간으로 바뀜)
+   const vueCount = ref(0)
+   
+   </script>
+   <template>
+   <div class="practice-section">
+   <h2>Hello Skala-Vue</h2>
+   <h3>일반 변수 클릭: {{ normalCount }}</h3>
+   <button @click="normalCount++">일반 변수 증가</button>
+   <br />
+   <h3>Vue 반응성 변수 클릭: {{ vueCount }}</h3>
+   <button @click="vueCount++">Vue 변수 증가</button>
+   </div>
+   </template>
+   ```
 
-- **보간법**: `{{ state }}`
-- **속성 바인딩**: `v-bind:attr` (`:attr`)
-- **이벤트 바인딩 & 수식어**: `v-on:event` (`@event`), 버블링 방지 (`@click.stop`), 기본 동작 방지 (`@submit.prevent`)
-- **조건부 렌더링**: `v-if` / `v-else-if` / `v-else` (DOM 생성/삭제) vs `v-show` (`display: none`)
-- **리스트 렌더링**: `v-for="item in list" :key="item.id"` (고유 key 필수)
-- **한글(IME) 양방향 바인딩 이슈**:
-  - `v-model`은 한글 조합 중 반영 지연 발생.
-  - **해결**: `:value="query"` + `@input="query = $event.target.value"`
+2. {{ }}를 활용해서 값을 채워넣는 방법
+   
+   ```jsx
+   // .src/components/practices/basic/SampleTwo.vue
+   <script setup>
+   import { ref } from 'vue'
+   
+   // Text Interpolation
+   const welcomeMessage = ref('Hello Skala-Vue')
+   </script>
+   <template>
+    <div class="practice-section">
+      <h2>{{ welcomeMessage }}</h2>
+      <p>{{ welcomeMessage.toUpperCase() }}</p>
+      <p>{{ 'Random number: ' + Math.ceil(Math.random() * 100) }}</p>
+    </div>
+   </template>
+   ```
+
+3. 위의 코드를 확인하기 위해 App.vue에 import
+   
+   ```jsx
+   // App.vue
+   <script setup>
+   import SampleOne from './components/practices/basic/SampleOne.vue'
+   import SampleTwo from './components/practices/basic/SampleTwo.vue'
+   </script>
+   
+   //...
+   <template>
+    <div style="padding: 20px">
+      <SampleOne />
+      <SampleTwo />
+    </div>
+   </template>
+   ```
+
+4. 결과 확인
 
 ---
