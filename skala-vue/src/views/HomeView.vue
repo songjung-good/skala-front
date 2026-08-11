@@ -14,7 +14,9 @@ import { RouterLink } from 'vue-router'
         <h3>💻 실습 코드 (Practices)</h3>
         <p>일자별로 학습한 Vue 핵심 개념과 디렉티브 실습 코드 모음입니다.</p>
         <div class="links">
-          <RouterLink to="/practice/day1" class="btn">1일차: 반응형 데이터 & 기초 디렉티브</RouterLink>
+          <RouterLink to="/practice/day1" class="btn"
+            >1일차: 반응형 데이터 & 기초 디렉티브</RouterLink
+          >
           <RouterLink to="/practice/day2" class="btn">2일차: 이벤트 & 폼 데이터 바인딩</RouterLink>
         </div>
       </div>

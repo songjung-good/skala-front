@@ -1,31 +1,63 @@
 <script setup>
+import WeatherMockup from '@/components/exercise/WeatherMockup.vue'
+import WeatherComposition from '@/components/exercise/WeatherComposition.vue'
+import WeatherParent from '@/components/exercise/WeatherParent.vue'
+import UnitToggler from '@/components/exercise/UnitToggler.vue'
 </script>
 
 <template>
-  <div class="assignment-content">
-    <h2>1일차 과제: 반응형 데이터와 디렉티브 활용</h2>
+  <div class="app-container">
+    <h1>⛅ 과제 1: 날씨 (Mockup)</h1>
     <hr />
-    <div class="card">
-      <h3>📌 과제 요구사항</h3>
-      <p>1일차에 배운 반응형 데이터 및 디렉티브(v-bind, v-if, v-for 등)를 활용한 실습 과제 공간입니다.</p>
+    <WeatherMockup />
+  </div>
+  <div class="app-container">
+    <h1>⛅ 과제 2: 날씨 (컴포지션)</h1>
+    <hr />
+    <WeatherComposition />
+  </div>
+  <div class="app-container">
+    <h1>⛅ 과제 3: 날씨 (컴포넌트)</h1>
+    <hr />
+    <WeatherParent />
+  </div>
+  <div class="app-container">
+    <h1>⛅ 과제 4: 라우터적용</h1>
+    <hr />
+    <div class="dashboard-wrapper">
+      <nav class="navigation-bar">
+        <RouterLink to="/" class="nav-item">🌦️ 날씨 대시보드</RouterLink>
+        <span class="divider">|</span>
+        <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
+      </nav>
+      <main>
+        <RouterView />
+        <!-- RouterView v-slot="{ Component }">
+          <KeepAlive>
+            <component :is="Component" />
+          </KeepAlive>
+        </RouterView-->
+      </main>
     </div>
-    <div class="card">
-      <h3>🛠 구현 영역</h3>
-      <p style="color: var(--color-text-light, #888);">과제 결과물을 여기에 구현합니다.</p>
+  </div>
+  <div class="app-container">
+    <h1>⛅ 과제 5: 스토어적용</h1>
+    <hr />
+    <div class="dashboard-wrapper">
+      <nav class="navigation-bar">
+        <RouterLink to="/" class="nav-item">🌦️ 날씨 대시보드</RouterLink>
+        <span class="divider">|</span>
+        <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
+        <UnitToggler />
+      </nav>
+      <main>
+        <RouterView />
+      </main>
     </div>
   </div>
 </template>
 
-<style scoped>
-.assignment-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-.card {
-  background: var(--color-background-soft, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.25rem;
-}
+<style>
+/* ⚠️ 외부 스타일 파일(예: 버튼 디자인 뭉치)을 이 방 안으로 쏙 가리켜 가져옵니다 */
+@import '@/assets/exercise.css';
 </style>

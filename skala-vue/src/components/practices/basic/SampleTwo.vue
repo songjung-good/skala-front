@@ -7,7 +7,7 @@ const welcomeMessage = ref('Hello Skala-Vue')
 <template>
   <div class="practice-section">
     <h3>{{ welcomeMessage }}</h3>
-    <p>{{ welcomeMessage.toUpperCase() }}</p>
+    <strong>{{ welcomeMessage.toUpperCase() }}</strong>
     <p>{{ 'Random number: ' + Math.ceil(Math.random() * 100) }}</p>
   </div>
 </template>

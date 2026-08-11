@@ -6,7 +6,7 @@ import { RouterLink, RouterView } from 'vue-router'
   <div class="app-container">
     <header class="app-header">
       <div class="header-left">
-        <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="32" height="32" />
+        <img alt="Vue logo" class="logo" src="@/assets/preview.png" width="50" height="32" />
         <span class="app-title">Vue Learning Lab</span>
       </div>
 

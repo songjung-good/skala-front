@@ -5,7 +5,6 @@ const isVisible = ref(true)
 
 <template>
   <div class="practice-section">
-    <h3>v-show 디렉티브 학습</h3>
     <button @click="isVisible = !isVisible">화면 토글하기</button>
     <br />
     <div v-show="isVisible" class="box">

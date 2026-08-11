@@ -7,7 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <div class="sub-nav">
       <h3>📝 일일 과제</h3>
       <div class="tabs">
-        <RouterLink to="/assignment/day1" class="tab-item">1일차</RouterLink>
+        <RouterLink to="/assignment/day1" class="tab-item">과제1</RouterLink>
       </div>
     </div>
     <div class="sub-body">

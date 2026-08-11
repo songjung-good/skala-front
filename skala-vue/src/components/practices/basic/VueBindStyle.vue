@@ -14,7 +14,6 @@ const baseBoxStyle = ref({
 
 <template>
   <div class="practice-section">
-    <h3>v-bind 디렉티브 고급 (스타일 바인딩)</h3>
     <h4>1) 인라인 스타일 변수 조작 (객체 형식)</h4>
     <p :style="{ color: textColor, fontWeight: 'bold' }">이 글자의 색상은 실시간으로 바뀝니다.</p>
     <button @click="textColor = textColor === 'purple' ? 'blue' : 'purple'">글자 색상 토글</button>

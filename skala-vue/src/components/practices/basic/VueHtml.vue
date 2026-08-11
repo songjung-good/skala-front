@@ -3,11 +3,9 @@ const rawHtmlData = `이 글자는 <span style="color: red; font-weight: bold;">
 </script>
 <template>
   <div class="practice-section">
-    <h3>v-html 디렉티브 학습</h3>
-    <h4>일반 보간법 {{}} 사용 결과:</h4>
+    <h3>일반 보간법 {{}} 사용 결과:</h3>
     <p>{{ rawHtmlData }}</p>
-    <br />
-    <h4>v-html 디렉티브 사용 결과:</h4>
+    <h3>v-html 디렉티브 사용 결과:</h3>
     <p v-html="rawHtmlData"></p>
   </div>
 </template>

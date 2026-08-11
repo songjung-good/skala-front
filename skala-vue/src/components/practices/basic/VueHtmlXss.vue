@@ -11,7 +11,6 @@ function showMessage() {
 
 <template>
   <div class="practice-section">
-    <h3>v-html XSS 학습</h3>
     <input v-model="inputValue" placeholder="내용를 입력하세요" />
     <button @click="showMessage">확인</button>
     <div v-html="message"></div>
