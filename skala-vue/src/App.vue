@@ -3,35 +3,33 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="app-container">
-    <header class="app-header">
-      <div class="header-left">
-        <img alt="Vue logo" class="logo" src="@/assets/preview.png" width="50" height="32" />
-        <span class="app-title">Vue Learning Lab</span>
-      </div>
+  <header class="app-header">
+    <div class="header-left">
+      <img alt="Vue logo" class="logo" src="@/assets/preview.png" width="50" height="32" />
+      <span class="app-title">Vue Learning Lab</span>
+    </div>
 
-      <nav class="main-nav">
-        <RouterLink to="/">홈</RouterLink>
-        <RouterLink to="/practice">실습 코드</RouterLink>
-        <RouterLink to="/assignment">일일 과제</RouterLink>
-      </nav>
-    </header>
+    <nav class="main-nav">
+      <RouterLink to="/">홈</RouterLink>
+      <RouterLink to="/practice">실습 코드</RouterLink>
+      <RouterLink to="/assignment">일일 과제</RouterLink>
+    </nav>
+  </header>
 
-    <main class="main-content">
-      <RouterView />
-    </main>
-  </div>
+  <main class="main-content">
+    <RouterView />
+  </main>
 </template>
 
 <style scoped>
-.app-container {
+/* .app-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
+} */
 
 .app-header {
   display: flex;
