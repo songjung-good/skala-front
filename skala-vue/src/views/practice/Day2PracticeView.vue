@@ -15,6 +15,13 @@ import VueStyle from '@/components/practices/basic/VueStyle.vue'
 
 import ReactiveRef from '@/components/practices/composition/ReactiveRef.vue'
 import ReactiveExercise from '@/components/practices/composition/ReactiveExercise.vue'
+
+import Computed from '@/components/practices/composition/Computed.vue'
+import ComputedWatch from '@/components/practices/composition/ComputedWatch.vue'
+import ComputedMultiSource from '@/components/practices/composition/ComputedMultiSource.vue'
+import ComputedDeepWatch from '@/components/practices/composition/ComputedDeepWatch.vue'
+import ComputedReactive from '@/components/practices/composition/ComputedReactive.vue'
+import ComputedWatchEffect from '@/components/practices/composition/ComputedWatchEffect.vue'
 </script>
 
 <template>
@@ -59,6 +66,27 @@ import ReactiveExercise from '@/components/practices/composition/ReactiveExercis
       <ReactiveRef />
       <h4>3-2. Reactive</h4>
       <ReactiveExercise />
+    </div>
+
+    <h3>4. Computed</h3>
+    <div class="card">
+      <h4>4-1. Computed</h4>
+      <Computed />
+      <br />
+      <h4>4-2. Computed Watch</h4>
+      <ComputedWatch />
+      <br />
+      <h4>4-3. Computed Multi</h4>
+      <ComputedMultiSource />>
+      <br />
+      <h4>4-4. Computed Deep Watch</h4>
+      <ComputedDeepWatch />
+      <br />
+      <h4>4-5. Computed Reactive</h4>
+      <ComputedReactive />
+      <br />
+      <h4>4-6. Computed Watch Effect</h4>
+      <ComputedWatchEffect />
     </div>
   </div>
 </template>
