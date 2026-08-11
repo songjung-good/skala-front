@@ -181,14 +181,22 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
 
 <style scoped>
 .weather-controls {
-  background: var(--color-background-soft, #f8f9fa);
-  border: 1.5px solid var(--color-border);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .weather-controls {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .search-action-row {
@@ -218,17 +226,17 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
   width: 100%;
   padding: 0.65rem 2.2rem 0.65rem 2.4rem;
   font-size: 0.92rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-background, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
   outline: none;
   transition: all 0.2s ease;
+  box-shadow: none;
 }
 
 .search-input:focus {
   border-color: hsla(160, 100%, 37%, 1);
-  box-shadow: 0 0 0 3px hsla(160, 100%, 37%, 0.15);
 }
 
 .btn-clear {
@@ -255,18 +263,19 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
   padding: 0.6rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: none;
 }
 
 .btn-action:hover:not(:disabled) {
-  background: hsla(160, 100%, 37%, 0.1);
-  border-color: hsla(160, 100%, 37%, 0.5);
+  background: hsla(160, 100%, 37%, 0.2);
+  border-color: hsla(160, 100%, 37%, 0.7);
   color: hsla(160, 100%, 37%, 1);
 }
 
@@ -276,14 +285,13 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
 }
 
 .unit-btn {
-  background: #2c3e50;
+  background: rgba(44, 62, 80, 0.8);
   color: #fff;
-  border-color: #2c3e50;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .unit-btn:hover:not(:disabled) {
-  background: #34495e;
-  border-color: #34495e;
+  background: rgba(52, 73, 94, 0.9);
   color: #fff;
 }
 
@@ -311,7 +319,7 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
   gap: 1rem;
   flex-wrap: wrap;
   padding-top: 0.75rem;
-  border-top: 1px dashed var(--color-border);
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
 }
 
 .filter-groups-wrap {
@@ -332,18 +340,18 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
   align-items: center;
   gap: 0.25rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 20px;
+  border-radius: 0;
   font-size: 0.8rem;
   font-weight: 500;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.2);
   color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .pill-btn:hover {
-  background: var(--color-background-mute, #eee);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .continent-btn.active {
@@ -354,7 +362,7 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
 }
 
 .weather-cat-group .pill-btn.active {
-  background: hsla(160, 100%, 37%, 1);
+  background: hsla(160, 100%, 37%, 0.85);
   color: white;
   border-color: hsla(160, 100%, 37%, 1);
   font-weight: 700;
@@ -378,12 +386,13 @@ const continents = ['전체', '아시아', '유럽', '아메리카', '오세아�
   padding: 0.45rem 0.85rem;
   font-size: 0.85rem;
   font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
   outline: none;
   cursor: pointer;
+  box-shadow: none;
 }
 
 .sort-dropdown:focus {

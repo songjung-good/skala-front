@@ -104,29 +104,41 @@ const configStore = useConfigStore()
 
 <style scoped>
 .weather-card {
-  background: var(--color-background, #ffffff);
-  border: 1.5px solid var(--color-border);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
   padding: 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   cursor: pointer;
   position: relative;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .weather-card {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .weather-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-  border-color: hsla(160, 100%, 37%, 0.6);
+  border-color: hsla(160, 100%, 37%, 0.8);
 }
 
 .weather-card.selected {
   border-color: hsla(160, 100%, 37%, 1);
-  background: var(--color-background-soft, #f4fbf7);
-  box-shadow: 0 0 0 2px hsla(160, 100%, 37%, 0.35), 0 10px 24px rgba(0, 0, 0, 0.08);
+  background: rgba(244, 251, 247, 0.35);
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .weather-card.selected {
+    background: rgba(20, 36, 28, 0.5);
+  }
 }
 
 /* 상단 */
@@ -174,30 +186,46 @@ const configStore = useConfigStore()
   font-size: 0.72rem;
   font-weight: 800;
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: 0;
   color: white;
   white-space: nowrap;
 }
 
-.score-best.travel-score-badge { background: #10b981; }
-.score-good.travel-score-badge { background: #3b82f6; }
-.score-fair.travel-score-badge { background: #f59e0b; }
-.score-poor.travel-score-badge { background: #ef4444; }
+.score-best.travel-score-badge {
+  background: #10b981;
+}
+.score-good.travel-score-badge {
+  background: #3b82f6;
+}
+.score-fair.travel-score-badge {
+  background: #f59e0b;
+}
+.score-poor.travel-score-badge {
+  background: #ef4444;
+}
 
 /* 뱃지 */
 .temp-badge {
   font-size: 0.7rem;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 0;
   color: #fff;
   white-space: nowrap;
 }
 
-.temp-badge.hot { background: #e74c3c; }
-.temp-badge.warm { background: #e67e22; }
-.temp-badge.cool { background: #3498db; }
-.temp-badge.cold { background: #00cec9; }
+.temp-badge.hot {
+  background: #e74c3c;
+}
+.temp-badge.warm {
+  background: #e67e22;
+}
+.temp-badge.cool {
+  background: #3498db;
+}
+.temp-badge.cold {
+  background: #00cec9;
+}
 
 /* 태그 */
 .city-tag-row {
@@ -271,10 +299,19 @@ const configStore = useConfigStore()
 .card-metrics {
   display: flex;
   justify-content: space-around;
-  background: var(--color-background-soft, #f8f9fa);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0;
   padding: 0.45rem 0.5rem;
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card-metrics {
+    background: rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
 }
 
 .metric-item {
@@ -305,29 +342,30 @@ const configStore = useConfigStore()
   padding: 0.45rem 0.6rem;
   font-size: 0.78rem;
   font-weight: 600;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  background: var(--color-background, #fff);
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
+  box-shadow: none;
 }
 
 .btn-map:hover {
-  background: #e0f2fe;
+  background: rgba(2, 136, 209, 0.2);
   color: #0288d1;
   border-color: #81d4fa;
 }
 
 .btn-detail {
-  background: #2c3e50;
+  background: rgba(44, 62, 80, 0.8);
   color: #ffffff;
-  border-color: #2c3e50;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .btn-detail:hover {
-  background: #34495e;
+  background: rgba(52, 73, 94, 0.95);
   border-color: #34495e;
 }
 </style>

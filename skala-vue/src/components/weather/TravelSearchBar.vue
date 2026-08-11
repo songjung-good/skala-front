@@ -259,20 +259,17 @@ const handleQuickSelect = (dest) => {
   width: 100%;
   padding: 0.85rem 2.5rem 0.85rem 2.8rem;
   font-size: 1.05rem;
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-background, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
   outline: none;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  box-shadow: none;
 }
 
 .travel-input:focus {
   border-color: hsla(160, 100%, 37%, 1);
-  box-shadow:
-    0 0 0 4px hsla(160, 100%, 37%, 0.15),
-    0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .searching-indicator {
@@ -287,13 +284,21 @@ const handleQuickSelect = (dest) => {
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: var(--color-background, #fff);
-  border: 1.5px solid var(--color-border);
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
+  box-shadow: none;
   z-index: 50;
   max-height: 280px;
   overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-dropdown {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .dropdown-item {
@@ -302,7 +307,7 @@ const handleQuickSelect = (dest) => {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   cursor: pointer;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   transition: background 0.15s;
 }
 
@@ -311,7 +316,7 @@ const handleQuickSelect = (dest) => {
 }
 
 .dropdown-item:hover {
-  background: hsla(160, 100%, 37%, 0.08);
+  background: hsla(160, 100%, 37%, 0.15);
 }
 
 .item-info {
@@ -350,34 +355,33 @@ const handleQuickSelect = (dest) => {
   padding: 0.8rem 1.15rem;
   font-size: 0.92rem;
   font-weight: 700;
-  border-radius: 12px;
-  border: 1.5px solid transparent;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: none;
 }
 
 .btn-random {
-  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  background: rgba(108, 92, 231, 0.85);
   color: white;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
 }
 
 .btn-random:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.35);
+  background: rgba(108, 92, 231, 1);
 }
 
 .btn-location {
-  background: var(--color-background-soft, #f8f9fa);
-  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
   color: var(--color-heading);
 }
 
 .btn-location:hover:not(:disabled) {
-  background: hsla(160, 100%, 37%, 0.1);
+  background: hsla(160, 100%, 37%, 0.2);
   color: hsla(160, 100%, 37%, 1);
-  border-color: hsla(160, 100%, 37%, 0.5);
+  border-color: hsla(160, 100%, 37%, 0.7);
 }
 
 .btn-location:disabled {
@@ -411,21 +415,21 @@ const handleQuickSelect = (dest) => {
   align-items: center;
   gap: 0.3rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 20px;
+  border-radius: 0;
   font-size: 0.82rem;
   font-weight: 600;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
   color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: none;
 }
 
 .tag-chip:hover {
-  background: hsla(160, 100%, 37%, 0.12);
+  background: hsla(160, 100%, 37%, 0.2);
   color: hsla(160, 100%, 37%, 1);
-  border-color: hsla(160, 100%, 37%, 0.5);
-  transform: translateY(-1px);
+  border-color: hsla(160, 100%, 37%, 0.7);
 }
 
 @media (max-width: 768px) {

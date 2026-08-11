@@ -101,13 +101,22 @@ const rainyCities = computed(() => {
 }
 
 .stat-card {
-  background: var(--color-background-soft, #f8f9fa);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0;
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-card {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .stat-label {
@@ -135,21 +144,24 @@ const rainyCities = computed(() => {
 }
 
 .rain-alert {
-  background: #e1f0fa;
-  border: 1px solid #bce0fd;
-  border-radius: 8px;
+  background: rgba(225, 240, 250, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(188, 224, 253, 0.6);
+  border-radius: 0;
   padding: 0.6rem 1rem;
   font-size: 0.85rem;
   color: #0c5460;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  box-shadow: none;
 }
 
 .status-bar {
-  background: #e8f5e9;
-  border: 1px solid #c8e6c9;
-  border-radius: 8px;
+  background: rgba(232, 245, 233, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(200, 230, 201, 0.6);
+  border-radius: 0;
   padding: 0.7rem 1.2rem;
   font-size: 0.9rem;
   font-weight: 600;
@@ -158,6 +170,7 @@ const rainyCities = computed(() => {
   align-items: center;
   gap: 0.6rem;
   transition: all 0.3s ease;
+  box-shadow: none;
 }
 
 @media (prefers-color-scheme: dark) {
