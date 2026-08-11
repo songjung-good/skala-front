@@ -12,6 +12,9 @@ import FormElementsHandling from '@/components/practices/basic/FormElementsHandl
 import FormModifier from '@/components/practices/basic/FormModifier.vue'
 
 import VueStyle from '@/components/practices/basic/VueStyle.vue'
+
+import ReactiveRef from '@/components/practices/composition/ReactiveRef.vue'
+import ReactiveExercise from '@/components/practices/composition/ReactiveExercise.vue'
 </script>
 
 <template>
@@ -49,6 +52,14 @@ import VueStyle from '@/components/practices/basic/VueStyle.vue'
         <VueStyle />
       </div>
     </section>
+
+    <h3>3. Reactive State</h3>
+    <div class="card">
+      <h4>3-1. Ref</h4>
+      <ReactiveRef />
+      <h4>3-2. Reactive</h4>
+      <ReactiveExercise />
+    </div>
   </div>
 </template>
 
