@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/restcountries/:path*",
+      "destination": "https://api.restcountries.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
