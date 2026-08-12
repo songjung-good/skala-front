@@ -3,6 +3,7 @@ import { ref, computed, watch, watchEffect, onMounted } from 'vue'
 import TravelCard from '@/components/travelweather/TravelCard.vue'
 import TravelSearchBar from '@/components/travelweather/TravelSearchBar.vue'
 import TravelSummary from '@/components/travelweather/TravelSummary.vue'
+import TravelDetailModal from '@/components/travelweather/TravelDetailModal.vue'
 import {
   defaultCities,
   countryMapping,
@@ -24,6 +25,7 @@ const selectedStatus = ref('전체')
 const sortBy = ref('score-desc') // 'score-desc' | 'temp-desc' | 'temp-asc' | 'name-asc'
 const lastUpdated = ref('')
 const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁을 확인합니다.')
+const detailCity = ref(null) // 상세 모달 활성 도시
 
 // RestCountries API 키
 const RESTCOUNTRIES_API_KEY =
@@ -165,12 +167,16 @@ const handleSelectCity = (city) => {
   selectedCityInfo.value = `✈️ ${city.name}(${city.country}) 선택됨 - 기온 ${city.temp}°C, 추천 점수 ${city.score}점 (${city.badge?.grade})`
 }
 
+// 상세 정보 모달 열기
 const showDetail = (city) => {
-  window.alert(
-    `[${city.name}, ${city.country}]\n` +
-      `현재 날씨: ${city.status} (${city.temp}°C)\n` +
-      `여행 추천 점수: ${city.score}점 (${city.badge.grade})`,
-  )
+  detailCity.value = city
+}
+
+// 필터 및 검색어 초기화
+const handleResetFilters = () => {
+  searchQuery.value = ''
+  selectedStatus.value = '전체'
+  sortBy.value = 'score-desc'
 }
 
 // 🎲 랜덤 여행지 추천
@@ -267,14 +273,29 @@ const handleMyLocation = async () => {
         @detail="showDetail"
       />
 
-      <p v-if="filteredCityList.length === 0" class="empty-state">
-        검색 결과와 일치하는 여행지가 없습니다.
-      </p>
+      <!-- 검색 결과 없을 때 빈 상태 안내 및 초기화 버튼 -->
+      <div v-if="filteredCityList.length === 0" class="empty-state">
+        <span class="empty-emoji">🛫</span>
+        <h4>일치하는 여행지가 없습니다</h4>
+        <p v-if="searchQuery">
+          '<strong>{{ searchQuery }}</strong>' 조건에 맞는 도시를 찾을 수 없습니다.
+        </p>
+        <button type="button" class="btn-reset-filter" @click="handleResetFilters">
+          필터 및 검색 초기화
+        </button>
+      </div>
     </section>
 
     <div class="status-bar">
       {{ selectedCityInfo }}
     </div>
+
+    <!-- 상세 정보 모달 -->
+    <TravelDetailModal
+      v-if="detailCity"
+      :city="detailCity"
+      @close="detailCity = null"
+    />
   </div>
 </template>
 
@@ -420,9 +441,50 @@ const handleMyLocation = async () => {
 .empty-state {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 2rem;
-  color: #e74c3c;
+  padding: 3rem 1.5rem;
+  background: var(--color-background-soft, #f8f9fa);
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.empty-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.empty-state h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  opacity: 0.8;
+}
+
+.btn-reset-filter {
+  margin-top: 0.75rem;
+  padding: 0.55rem 1.2rem;
+  background: hsla(160, 100%, 37%, 1);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.88rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-filter:hover {
+  background: hsla(160, 100%, 32%, 1);
 }
 
 .status-bar {

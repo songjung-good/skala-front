@@ -157,3 +157,14 @@ skala-vue/
 
 * HTML5 표준 `navigator.geolocation` API를 통해 현재 사용자 좌표(`lat`, `lon`) 획득.
 * Open-Meteo 실시간 기상 API로 내 위치 기온/상태를 조회하여 도시 카드 목록 최상단에 추가 및 자동 선택.
+
+#### ⑨ 여행지 상세 정보 모달 (`TravelDetailModal.vue`)
+
+* 브라우저 기본 `window.alert()` 팝업을 전면 교체하여 Vue `<Teleport to="body">` 기반 인터랙티브 모달 컴포넌트로 구축.
+* 기상 수치, 여행 쾌적 지수 프로그레스 바, 위/경도 좌표, 날씨 상태 및 기온별 옷차림/준비물 맞춤 가이드 동적 제공.
+* 배경 클릭 시 닫기 및 키보드 `ESC` 키 이벤트 리스너 연동.
+
+#### ⑩ 검색 UX 강화 & 빈 상태 (Empty State) 원클릭 복구
+
+* `TravelSearchBar.vue` 입력창 내 텍스트 즉시 삭제 버튼(`✕`) 추가.
+* 검색 결과가 존재하지 않을 때 Empty UI 출력 및 `필터 및 검색 초기화` 버튼을 통해 1클릭으로 기본 상태 복귀.

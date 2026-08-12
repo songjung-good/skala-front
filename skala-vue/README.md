@@ -57,10 +57,18 @@ npm run format
    - 필터링된 조건의 도시 중 무작위 1개 추천 및 상태바 연동
 6. **브라우저 Geolocation 기반 내 위치 날씨 ("📍 내 위치 날씨")**
    - `navigator.geolocation` Web API로 사용자 좌표를 획득하여 실시간 날씨 즉시 조회 및 목록 최상단 추가
-7. **컴포넌트 분리 (`Props` / `Emits` 구조화)**
-   - `TravelSearchBar.vue`: 검색, 날씨 필터 칩, 정렬 드롭다운, 랜덤/내위치 액션 툴바
+7. **여행지 상세 정보 모달 (`TravelDetailModal.vue`)**
+   - `window.alert` 대신 Teleport 기반 인터랙티브 모달 팝업 제공
+   - 기온, 날씨, 쾌적도 프로그레스 게이지, 위/경도 좌표, 날씨 맞춤 옷차림/준비물 가이드 출력
+   - 배경(Backdrop) 클릭 및 `ESC` 키 바인딩 닫기 지원
+8. **검색 UX & 빈 상태(Empty State) 원클릭 초기화**
+   - 검색창 내 원클릭 지우기(`✕`) 버튼 탑재
+   - 일치하는 도시가 없을 때 직관적인 Empty UI 및 "필터 및 검색 초기화" 복구 버튼 제공
+9. **컴포넌트 분리 (`Props` / `Emits` 구조화)**
+   - `TravelSearchBar.vue`: 검색, 날씨 필터 칩, 정렬 드롭다운, 원클릭 지우기, 액션 툴바
    - `TravelSummary.vue`: 검색 결과 수, 평균 기온, 평균 여행 점수 요약 통계
-   - `TravelCard.vue`: 국기 배경 카드, 기온, 여행 등급 뱃지, 상호작용
+   - `TravelCard.vue`: 국기 배경 카드, 기온, 여행 등급 뱃지, 상세보기 이벤트
+   - `TravelDetailModal.vue`: 도시별 심층 예보 및 여행 팁 모달 (Teleport)
    - `weatherService.js`: API 통신 및 Geolocation 로직 분리
 
 ---

@@ -36,12 +36,23 @@ const emit = defineEmits([
     <!-- 검색창 및 정렬/액션 툴바 -->
     <div class="top-row">
       <div class="search-bar">
-        <input
-          type="text"
-          :value="searchQuery"
-          @input="emit('update-query', $event.target.value)"
-          placeholder="도시 또는 국가 검색 (예: 서울, 프랑스, 도쿄)"
-        />
+        <div class="input-wrapper">
+          <input
+            type="text"
+            :value="searchQuery"
+            @input="emit('update-query', $event.target.value)"
+            placeholder="도시 또는 국가 검색 (예: 서울, 프랑스, 도쿄)"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="btn-clear-query"
+            title="검색어 지우기"
+            @click="emit('update-query', '')"
+          >
+            ✕
+          </button>
+        </div>
         <span v-if="searchQuery" class="query-preview">
           검색: <strong>{{ searchQuery }}</strong>
         </span>
@@ -123,14 +134,41 @@ const emit = defineEmits([
   min-width: 260px;
 }
 
-.search-bar input {
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.input-wrapper input {
   width: 100%;
-  padding: 0.6rem 0.9rem;
+  padding: 0.6rem 2rem 0.6rem 0.9rem;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.95rem;
   background: var(--color-background, #fff);
   color: var(--color-text);
+}
+
+.btn-clear-query {
+  position: absolute;
+  right: 0.6rem;
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-clear-query:hover {
+  opacity: 1;
 }
 
 .query-preview {
