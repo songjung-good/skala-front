@@ -67,7 +67,7 @@ const handleDetailClick = (event) => {
 .city-card {
   position: relative;
   background-color: var(--color-background-soft, #fff);
-  border-radius: 12px;
+  /* border-radius: 12px; */
   padding: 1.15rem;
   display: flex;
   flex-direction: column;

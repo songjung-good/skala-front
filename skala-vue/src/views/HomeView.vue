@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, watch, watchEffect, onMounted } from 'vue'
 import TravelCard from '@/components/travelweather/TravelCard.vue'
+import TravelSearchBar from '@/components/travelweather/TravelSearchBar.vue'
+import TravelSummary from '@/components/travelweather/TravelSummary.vue'
 
 // 9개 세계 주요 도시 정적 데이터
 const cityWeatherList = ref([
@@ -216,50 +218,17 @@ const showDetail = (city) => {
       <p class="desc">실시간 날씨 기반 여행지 점수 및 국가별 기상 가이드</p>
     </header>
 
-    <!-- 검색 및 필터 -->
-    <section class="control-box">
-      <div class="search-bar">
-        <input
-          type="text"
-          :value="searchQuery"
-          @input="(e) => (searchQuery = e.target.value)"
-          placeholder="도시 또는 국가 검색 (예: 서울, 프랑스, 도쿄)"
-        />
-        <span v-if="searchQuery" class="query-preview">
-          검색: <strong>{{ searchQuery }}</strong>
-        </span>
-      </div>
+    <!-- 검색 및 필터 (TravelSearchBar 컴포넌트) -->
+    <TravelSearchBar
+      :search-query="searchQuery"
+      :status-options="statusOptions"
+      :selected-status="selectedStatus"
+      @update-query="(val) => (searchQuery = val)"
+      @update-status="(val) => (selectedStatus = val)"
+    />
 
-      <div class="filter-bar">
-        <span class="filter-title">날씨 필터:</span>
-        <button
-          v-for="status in statusOptions"
-          :key="status"
-          type="button"
-          class="btn-filter"
-          :class="{ active: selectedStatus === status }"
-          @click="selectedStatus = status"
-        >
-          {{ status }}
-        </button>
-      </div>
-    </section>
-
-    <!-- 통계 요약 -->
-    <div v-if="filteredCityList.length > 0" class="summary-card">
-      <div class="stat-item">
-        <span class="stat-label">조회 도시</span>
-        <strong>{{ stats.count }}개</strong>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">평균 기온</span>
-        <strong>{{ stats.avgTemp }}°C</strong>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">평균 여행 점수</span>
-        <strong>{{ stats.avgScore }}점</strong>
-      </div>
-    </div>
+    <!-- 통계 요약 (TravelSummary 컴포넌트) -->
+    <TravelSummary :stats="stats" />
 
     <!-- 여행지 도시 카드 리스트 (TravelCard 컴포넌트 분리) -->
     <section class="city-grid">
@@ -307,100 +276,6 @@ const showDetail = (city) => {
   color: var(--color-text);
   font-size: 0.95rem;
   opacity: 0.8;
-}
-
-.control-box {
-  background: var(--color-background-soft, #f8f9fa);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.search-bar input {
-  flex: 1;
-  padding: 0.6rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: var(--color-background, #fff);
-  color: var(--color-text);
-}
-
-.query-preview {
-  font-size: 0.85rem;
-  color: var(--color-text);
-  white-space: nowrap;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.filter-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.btn-filter {
-  padding: 0.3rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  background: var(--color-background, #fff);
-  color: var(--color-text);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-filter:hover {
-  border-color: hsla(160, 100%, 37%, 0.8);
-}
-
-.btn-filter.active {
-  background: hsla(160, 100%, 37%, 1);
-  color: #fff;
-  border-color: hsla(160, 100%, 37%, 1);
-}
-
-.summary-card {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  background: var(--color-background-soft, #f8f9fa);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  text-align: center;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--color-text);
-  opacity: 0.75;
-}
-
-.stat-item strong {
-  font-size: 1.1rem;
-  color: var(--color-heading);
 }
 
 .city-grid {
