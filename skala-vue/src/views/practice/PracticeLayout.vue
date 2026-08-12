@@ -18,6 +18,10 @@ import { RouterLink, RouterView } from 'vue-router'
   </div>
 </template>
 
+<style>
+@import '@/assets/practice.css';
+</style>
+
 <style scoped>
 .sub-layout {
   display: flex;

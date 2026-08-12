@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +6,55 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: () => import('../views/HomeView.vue'),
+    },
+    {
+      path: '/assignment',
+      component: () => import('../views/assignment/AssignmentLayout.vue'),
+      redirect: '/assignment/day1',
+      children: [
+        {
+          path: 'day1',
+          name: 'assignment-day1',
+          component: () => import('../views/assignment/Day1AssignmentView.vue'),
+        },
+        {
+          path: 'weather',
+          name: 'assignment-weather',
+          component: () => import('../views/assignment/WeatherHomeView.vue'),
+        },
+        {
+          path: 'weather/:cityId',
+          name: 'assignment-weather-detail',
+          component: () => import('../views/assignment/WeatherDetailView.vue'),
+        },
+        {
+          path: 'about',
+          name: 'assignment-about',
+          component: () => import('../views/assignment/WeatherAboutView.vue'),
+        },
+        {
+          path: 'stats',
+          name: 'assignment-stats',
+          component: () => import('../views/assignment/WeatherStatsView.vue'),
+        },
+      ],
+    },
+    {
+      path: '/weather',
+      redirect: '/assignment/weather',
+    },
+    {
+      path: '/weather/:cityId',
+      redirect: (to) => `/assignment/weather/${to.params.cityId}`,
+    },
+    {
+      path: '/about',
+      redirect: '/assignment/about',
+    },
+    {
+      path: '/stats',
+      redirect: '/assignment/stats',
     },
     {
       path: '/practice',
@@ -32,16 +79,9 @@ const router = createRouter({
       ],
     },
     {
-      path: '/assignment',
-      component: () => import('../views/assignment/AssignmentLayout.vue'),
-      redirect: '/assignment/day1',
-      children: [
-        {
-          path: 'day1',
-          name: 'assignment-day1',
-          component: () => import('../views/assignment/Day1AssignmentView.vue'),
-        },
-      ],
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/assignment/NotFoundView.vue'),
     },
   ],
 })

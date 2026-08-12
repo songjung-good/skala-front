@@ -22,10 +22,28 @@ const isLoadingLocation = ref(false)
 const dataSource = ref('loading') // 'live' | 'fallback'
 const searchQuery = ref('')
 const selectedStatus = ref('전체')
+const selectedContinent = ref('전체')
 const sortBy = ref('score-desc') // 'score-desc' | 'temp-desc' | 'temp-asc' | 'name-asc'
 const lastUpdated = ref('')
-const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁을 확인합니다.')
+const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁과 레이더가 연동됩니다.')
 const detailCity = ref(null) // 상세 모달 활성 도시
+
+// 📡 Windy 실시간 레이더 상태
+const activeCity = ref(defaultCities[0])
+const selectedLayer = ref('wind') // 'wind' | 'rain' | 'temp' | 'clouds'
+const isRadarExpanded = ref(true)
+
+const radarLayers = [
+  { key: 'wind', label: '💨 바람' },
+  { key: 'rain', label: '🌧️ 비/레이더' },
+  { key: 'temp', label: '🌡️ 기온' },
+  { key: 'clouds', label: '☁️ 구름' },
+]
+
+const windyEmbedUrl = computed(() => {
+  const city = activeCity.value || defaultCities[0]
+  return `https://embed.windy.com/embed2.html?lat=${city.lat}&lon=${city.lon}&detailLat=${city.lat}&detailLon=${city.lon}&width=650&height=350&zoom=5&level=surface&overlay=${selectedLayer.value}&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1`
+})
 
 // RestCountries API 키
 const RESTCOUNTRIES_API_KEY =
@@ -90,6 +108,14 @@ const statusOptions = computed(() => {
   return ['전체', ...new Set(statuses)]
 })
 
+// 대륙 필터 옵션
+const continentOptions = computed(() => {
+  const continents = cityWeatherList.value
+    .map((item) => item.continent)
+    .filter(Boolean)
+  return ['전체', ...new Set(continents)]
+})
+
 // 가공된 도시 목록 (여행 점수 및 국기 URL 포함)
 const enrichedCityList = computed(() => {
   return cityWeatherList.value.map((city) => {
@@ -107,7 +133,7 @@ const enrichedCityList = computed(() => {
   })
 })
 
-// 검색어 + 날씨 필터 + 정렬 적용 목록
+// 검색어 + 날씨 필터 + 대륙 필터 + 정렬 적용 목록
 const filteredCityList = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
@@ -118,8 +144,10 @@ const filteredCityList = computed(() => {
       city.name.toLowerCase().includes(query) ||
       city.country.toLowerCase().includes(query)
     const matchesStatus = selectedStatus.value === '전체' || city.status === selectedStatus.value
+    const matchesContinent =
+      selectedContinent.value === '전체' || city.continent === selectedContinent.value
 
-    return matchesQuery && matchesStatus
+    return matchesQuery && matchesStatus && matchesContinent
   })
 
   // 2. 정렬
@@ -159,23 +187,21 @@ watch(selectedCityInfo, (newVal, oldVal) => {
 
 watchEffect(() => {
   console.log(
-    `[검색/필터] '${searchQuery.value}' | '${selectedStatus.value}' | '${sortBy.value}' (결과: ${filteredCityList.value.length}개)`,
+    `[검색/필터] '${searchQuery.value}' | '${selectedContinent.value}' | '${selectedStatus.value}' | '${sortBy.value}' (결과: ${filteredCityList.value.length}개)`,
   )
 })
 
 const handleSelectCity = (city) => {
-  selectedCityInfo.value = `✈️ ${city.name}(${city.country}) 선택됨 - 기온 ${city.temp}°C, 추천 점수 ${city.score}점 (${city.badge?.grade})`
-}
-
-// 상세 정보 모달 열기
-const showDetail = (city) => {
+  activeCity.value = city
   detailCity.value = city
+  selectedCityInfo.value = `✈️ ${city.name}(${city.country}) 선택됨 - 기온 ${city.temp}°C, 추천 점수 ${city.score}점 (${city.badge?.grade})`
 }
 
 // 필터 및 검색어 초기화
 const handleResetFilters = () => {
   searchQuery.value = ''
   selectedStatus.value = '전체'
+  selectedContinent.value = '전체'
   sortBy.value = 'score-desc'
 }
 
@@ -245,14 +271,61 @@ const handleMyLocation = async () => {
       :search-query="searchQuery"
       :status-options="statusOptions"
       :selected-status="selectedStatus"
+      :continent-options="continentOptions"
+      :selected-continent="selectedContinent"
       :sort-by="sortBy"
       :is-loading-location="isLoadingLocation"
       @update-query="(val) => (searchQuery = val)"
       @update-status="(val) => (selectedStatus = val)"
+      @update-continent="(val) => (selectedContinent = val)"
       @update-sort="(val) => (sortBy = val)"
       @random-pick="handleRandomDestination"
       @my-location="handleMyLocation"
     />
+
+    <!-- 📡 Windy 실시간 위성/기상 레이더 (Lv 3 비주얼 임팩트) -->
+    <section class="radar-section">
+      <div class="radar-header">
+        <div class="radar-title-box">
+          <span class="radar-badge">LIVE RADAR</span>
+          <h3>📡 실시간 기상 레이더</h3>
+          <span class="radar-target">
+            관측 도시: <strong>{{ activeCity?.name }} ({{ activeCity?.country }})</strong>
+          </span>
+        </div>
+        <div class="radar-controls">
+          <div class="layer-buttons">
+            <button
+              v-for="layer in radarLayers"
+              :key="layer.key"
+              type="button"
+              class="btn-layer"
+              :class="{ active: selectedLayer === layer.key }"
+              @click="selectedLayer = layer.key"
+            >
+              {{ layer.label }}
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn-toggle-radar"
+            @click="isRadarExpanded = !isRadarExpanded"
+          >
+            {{ isRadarExpanded ? '▲ 레이더 접기' : '▼ 레이더 펼치기' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-show="isRadarExpanded" class="radar-iframe-wrapper">
+        <iframe
+          :src="windyEmbedUrl"
+          class="windy-frame"
+          title="Windy 실시간 레이더"
+          frameborder="0"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </section>
 
     <!-- 통계 요약 (TravelSummary 컴포넌트) -->
     <TravelSummary :stats="stats" />
@@ -270,7 +343,6 @@ const handleMyLocation = async () => {
         :key="city.id"
         :city="city"
         @select="handleSelectCity"
-        @detail="showDetail"
       />
 
       <!-- 검색 결과 없을 때 빈 상태 안내 및 초기화 버튼 -->
@@ -285,10 +357,6 @@ const handleMyLocation = async () => {
         </button>
       </div>
     </section>
-
-    <div class="status-bar">
-      {{ selectedCityInfo }}
-    </div>
 
     <!-- 상세 정보 모달 -->
     <TravelDetailModal
@@ -487,12 +555,123 @@ const handleMyLocation = async () => {
   background: hsla(160, 100%, 32%, 1);
 }
 
-.status-bar {
-  padding: 0.6rem 1rem;
-  background: var(--color-background-mute, #eee);
-  border-radius: 6px;
+/* 📡 실시간 레이더 섹션 스타일 */
+.radar-section {
+  background: var(--color-background-soft, #f8f9fa);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.radar-header {
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.radar-title-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.radar-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 0.15rem 0.45rem;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 4px;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.radar-title-box h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.radar-target {
   font-size: 0.85rem;
   color: var(--color-text);
-  text-align: center;
+  opacity: 0.85;
+}
+
+.radar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.layer-buttons {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.btn-layer {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background, #fff);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-layer:hover {
+  border-color: #3498db;
+}
+
+.btn-layer.active {
+  background: #3498db;
+  color: #fff;
+  border-color: #3498db;
+}
+
+.btn-toggle-radar {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-toggle-radar:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.radar-iframe-wrapper {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  background: #000;
+}
+
+.windy-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
 </style>

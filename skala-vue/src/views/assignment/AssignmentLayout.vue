@@ -7,7 +7,11 @@ import { RouterLink, RouterView } from 'vue-router'
     <div class="sub-nav">
       <h3>📝 일일 과제</h3>
       <div class="tabs">
-        <RouterLink to="/assignment/day1" class="tab-item">과제1</RouterLink>
+        <RouterLink to="/assignment/day1" class="tab-item">과제 1~5 통합</RouterLink>
+        <RouterLink to="/assignment/weather" class="tab-item">🌦️ 날씨 대시보드</RouterLink>
+        <RouterLink to="/assignment/weather/city_01" class="tab-item">🔍 상세 정보</RouterLink>
+        <RouterLink to="/assignment/about" class="tab-item">ℹ️ 서비스 소개</RouterLink>
+        <RouterLink to="/assignment/stats" class="tab-item">📊 통계 분석</RouterLink>
       </div>
     </div>
     <div class="sub-body">
@@ -15,6 +19,10 @@ import { RouterLink, RouterView } from 'vue-router'
     </div>
   </div>
 </template>
+
+<style>
+@import '@/assets/exercise.css';
+</style>
 
 <style scoped>
 .sub-layout {

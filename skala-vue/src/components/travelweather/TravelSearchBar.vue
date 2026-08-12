@@ -12,6 +12,14 @@ defineProps({
     type: String,
     default: '전체',
   },
+  continentOptions: {
+    type: Array,
+    default: () => ['전체'],
+  },
+  selectedContinent: {
+    type: String,
+    default: '전체',
+  },
   sortBy: {
     type: String,
     default: 'score-desc',
@@ -25,6 +33,7 @@ defineProps({
 const emit = defineEmits([
   'update-query',
   'update-status',
+  'update-continent',
   'update-sort',
   'random-pick',
   'my-location',
@@ -91,18 +100,34 @@ const emit = defineEmits([
       </div>
     </div>
 
-    <div class="filter-bar">
-      <span class="filter-title">날씨 필터:</span>
-      <button
-        v-for="status in statusOptions"
-        :key="status"
-        type="button"
-        class="btn-filter"
-        :class="{ active: selectedStatus === status }"
-        @click="emit('update-status', status)"
-      >
-        {{ status }}
-      </button>
+    <div class="filters-container">
+      <div class="filter-bar">
+        <span class="filter-title">🌏 대륙:</span>
+        <button
+          v-for="continent in continentOptions"
+          :key="continent"
+          type="button"
+          class="btn-filter"
+          :class="{ active: selectedContinent === continent }"
+          @click="emit('update-continent', continent)"
+        >
+          {{ continent }}
+        </button>
+      </div>
+
+      <div class="filter-bar">
+        <span class="filter-title">🌤️ 날씨:</span>
+        <button
+          v-for="status in statusOptions"
+          :key="status"
+          type="button"
+          class="btn-filter"
+          :class="{ active: selectedStatus === status }"
+          @click="emit('update-status', status)"
+        >
+          {{ status }}
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -217,6 +242,12 @@ const emit = defineEmits([
 .btn-action:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .filter-bar {

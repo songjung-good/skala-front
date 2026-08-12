@@ -8,7 +8,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select', 'detail'])
+const emit = defineEmits(['select'])
 
 const cardStyle = computed(() => {
   if (!props.city.flagUrl) return {}
@@ -22,11 +22,6 @@ const cardStyle = computed(() => {
 
 const handleCardClick = () => {
   emit('select', props.city)
-}
-
-const handleDetailClick = (event) => {
-  event.stopPropagation()
-  emit('detail', props.city)
 }
 </script>
 
@@ -58,7 +53,7 @@ const handleDetailClick = (event) => {
 
     <div class="card-footer">
       <span class="grade-text">{{ city.badge?.grade }}</span>
-      <button type="button" class="btn-detail" @click="handleDetailClick">상세보기</button>
+      <span class="card-hint">상세보기 ❯</span>
     </div>
   </div>
 </template>
@@ -195,22 +190,16 @@ const handleDetailClick = (event) => {
   opacity: 0.85;
 }
 
-.btn-detail {
-  padding: 0.3rem 0.75rem;
+.card-hint {
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
-  color: var(--color-text);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: hsla(160, 100%, 37%, 1);
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
 }
 
-.btn-detail:hover {
-  background: hsla(160, 100%, 37%, 0.15);
-  border-color: hsla(160, 100%, 37%, 1);
-  color: hsla(160, 100%, 37%, 1);
+.city-card:hover .card-hint {
+  opacity: 1;
 }
 
 /* Dark mode adjustment for card background overlay */

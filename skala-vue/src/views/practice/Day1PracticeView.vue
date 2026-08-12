@@ -88,5 +88,4 @@ h4 {
 h4:first-of-type {
   margin-top: 0;
 }
-@import '@/assets/practice.css';
 </style>
