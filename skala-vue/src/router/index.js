@@ -24,6 +24,11 @@ const router = createRouter({
           name: 'practice-day2',
           component: () => import('../views/practice/Day2PracticeView.vue'),
         },
+        {
+          path: 'day3',
+          name: 'practice-day3',
+          component: () => import('../views/practice/Day3PracticeView.vue'),
+        },
       ],
     },
     {
