@@ -25,68 +25,70 @@ import ComputedWatchEffect from '@/components/practices/composition/ComputedWatc
 </script>
 
 <template>
-  <div class="practice-content">
-    <h2>2일차: 고급 디렉티브 & 이벤트 / 폼 바인딩</h2>
-    <hr />
-    <section>
-      <h3>2. Vue Directive (추가)</h3>
+  <div class="practice-container">
+    <div class="practice-content">
+      <h2>2일차: 고급 디렉티브 & 이벤트 / 폼 바인딩</h2>
+      <hr />
+      <section>
+        <h3>2. Vue Directive (추가)</h3>
+        <div class="card">
+          <h4>2-11. v-pre 디렉티브</h4>
+          <VuePre />
+          <h4>2-12. v-cloak 디렉티브</h4>
+          <VueCloak />
+          <h4>2-13. v-once 디렉티브</h4>
+          <VueOnce />
+          <h4>2-14. v-memo 디렉티브</h4>
+          <VueMemo />
+        </div>
+
+        <div class="card">
+          <h4>2-15. v-on 디렉티브 (이벤트 핸들러)</h4>
+          <EventHandlerVon />
+          <h4>2-16. v-on 디렉티브 (이벤트 객체)</h4>
+          <EventObject />
+          <h4>2-17. v-on 디렉티브 (이벤트 수정자)</h4>
+          <EventModifier />
+        </div>
+
+        <div class="card">
+          <h4>2-18. Form Data Binding (요소 핸들링)</h4>
+          <FormElementsHandling />
+          <h4>2-19. Form Data Binding (v-model 수식어)</h4>
+          <FormModifier />
+          <h4>2-20. Scoped 스타일 및 외부 CSS 활용</h4>
+          <VueStyle />
+        </div>
+      </section>
+
+      <h3>3. Reactive State</h3>
       <div class="card">
-        <h4>2-11. v-pre 디렉티브</h4>
-        <VuePre />
-        <h4>2-12. v-cloak 디렉티브</h4>
-        <VueCloak />
-        <h4>2-13. v-once 디렉티브</h4>
-        <VueOnce />
-        <h4>2-14. v-memo 디렉티브</h4>
-        <VueMemo />
+        <h4>3-1. Ref</h4>
+        <ReactiveRef />
+        <h4>3-2. Reactive</h4>
+        <ReactiveExercise />
       </div>
 
+      <h3>4. Computed</h3>
       <div class="card">
-        <h4>2-15. v-on 디렉티브 (이벤트 핸들러)</h4>
-        <EventHandlerVon />
-        <h4>2-16. v-on 디렉티브 (이벤트 객체)</h4>
-        <EventObject />
-        <h4>2-17. v-on 디렉티브 (이벤트 수정자)</h4>
-        <EventModifier />
+        <h4>4-1. Computed</h4>
+        <Computed />
+        <br />
+        <h4>4-2. Computed Watch</h4>
+        <ComputedWatch />
+        <br />
+        <h4>4-3. Computed Multi</h4>
+        <ComputedMultiSource />>
+        <br />
+        <h4>4-4. Computed Deep Watch</h4>
+        <ComputedDeepWatch />
+        <br />
+        <h4>4-5. Computed Reactive</h4>
+        <ComputedReactive />
+        <br />
+        <h4>4-6. Computed Watch Effect</h4>
+        <ComputedWatchEffect />
       </div>
-
-      <div class="card">
-        <h4>2-18. Form Data Binding (요소 핸들링)</h4>
-        <FormElementsHandling />
-        <h4>2-19. Form Data Binding (v-model 수식어)</h4>
-        <FormModifier />
-        <h4>2-20. Scoped 스타일 및 외부 CSS 활용</h4>
-        <VueStyle />
-      </div>
-    </section>
-
-    <h3>3. Reactive State</h3>
-    <div class="card">
-      <h4>3-1. Ref</h4>
-      <ReactiveRef />
-      <h4>3-2. Reactive</h4>
-      <ReactiveExercise />
-    </div>
-
-    <h3>4. Computed</h3>
-    <div class="card">
-      <h4>4-1. Computed</h4>
-      <Computed />
-      <br />
-      <h4>4-2. Computed Watch</h4>
-      <ComputedWatch />
-      <br />
-      <h4>4-3. Computed Multi</h4>
-      <ComputedMultiSource />>
-      <br />
-      <h4>4-4. Computed Deep Watch</h4>
-      <ComputedDeepWatch />
-      <br />
-      <h4>4-5. Computed Reactive</h4>
-      <ComputedReactive />
-      <br />
-      <h4>4-6. Computed Watch Effect</h4>
-      <ComputedWatchEffect />
     </div>
   </div>
 </template>

@@ -18,50 +18,52 @@ import VueFor from '@/components/practices/basic/VueFor.vue'
 </script>
 
 <template>
-  <div class="practice-content">
-    <h2>1일차: 반응형 데이터 및 기초 디렉티브</h2>
-    <hr />
-    <section>
-      <h3>1. 반응형 데이터</h3>
-      <div class="card">
-        <h4>1-1. 일반 변수와 Vue 반응성 변수</h4>
-        <SampleOne />
-        <h4>1-2. Text Interpolation</h4>
-        <SampleTwo />
-      </div>
-    </section>
+  <div class="practice-container">
+    <div class="practice-content">
+      <h2>1일차: 반응형 데이터 및 기초 디렉티브</h2>
+      <hr />
+      <section>
+        <h3>1. 반응형 데이터</h3>
+        <div class="card">
+          <h4>1-1. 일반 변수와 Vue 반응성 변수</h4>
+          <SampleOne />
+          <h4>1-2. Text Interpolation</h4>
+          <SampleTwo />
+        </div>
+      </section>
 
-    <section>
-      <h3>2. Vue Directive</h3>
-      <div class="card">
-        <h4>2-1. v-html 디렉티브</h4>
-        <VueHtml />
-        <h4>2-2. v-html XSS 학습</h4>
-        <VueHtmlXss />
-        <h4>2-3. v-text 디렉티브</h4>
-        <VueText />
-      </div>
+      <section>
+        <h3>2. Vue Directive</h3>
+        <div class="card">
+          <h4>2-1. v-html 디렉티브</h4>
+          <VueHtml />
+          <h4>2-2. v-html XSS 학습</h4>
+          <VueHtmlXss />
+          <h4>2-3. v-text 디렉티브</h4>
+          <VueText />
+        </div>
 
-      <div class="card">
-        <h4>2-4. v-bind 디렉티브</h4>
-        <VueBind />
-        <h4>2-5. v-bind 디렉티브 (클래스 바인딩)</h4>
-        <VueBindClass />
-        <h4>2-6. v-bind 디렉티브 (스타일 바인딩)</h4>
-        <VueBindStyle />
-        <h4>2-7. v-bind 디렉티브 (단축 문법)</h4>
-        <VueBindShorthand />
-      </div>
+        <div class="card">
+          <h4>2-4. v-bind 디렉티브</h4>
+          <VueBind />
+          <h4>2-5. v-bind 디렉티브 (클래스 바인딩)</h4>
+          <VueBindClass />
+          <h4>2-6. v-bind 디렉티브 (스타일 바인딩)</h4>
+          <VueBindStyle />
+          <h4>2-7. v-bind 디렉티브 (단축 문법)</h4>
+          <VueBindShorthand />
+        </div>
 
-      <div class="card">
-        <h4>2-8. v-if, v-else-if, v-else 디렉티브</h4>
-        <VueIf />
-        <h4>2-9. v-show 디렉티브</h4>
-        <VueShow />
-        <h4>2-10. v-for 디렉티브</h4>
-        <VueFor />
-      </div>
-    </section>
+        <div class="card">
+          <h4>2-8. v-if, v-else-if, v-else 디렉티브</h4>
+          <VueIf />
+          <h4>2-9. v-show 디렉티브</h4>
+          <VueShow />
+          <h4>2-10. v-for 디렉티브</h4>
+          <VueFor />
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -86,4 +88,5 @@ h4 {
 h4:first-of-type {
   margin-top: 0;
 }
+@import '@/assets/practice.css';
 </style>
