@@ -115,8 +115,8 @@ skala-vue/
 #### ① 컴포넌트 분리 (`Props` / `Emits` 통신)
 
 1. **`TravelSearchBar.vue`**:
-   * 부모(`HomeView`)로부터 `searchQuery`, `statusOptions`, `selectedStatus`를 `props`로 주입받아 렌더링.
-   * 사용자 입력 및 필터 클릭 시 `update-query`, `update-status` 이벤트를 `emits`로 상위 전달.
+   * 부모(`HomeView`)로부터 `searchQuery`, `statusOptions`, `selectedStatus`, `sortBy`, `isLoadingLocation`을 `props`로 주입받아 렌더링.
+   * 사용자 입력, 필터, 정렬 변경, 랜덤 뽑기, 위치 요청 시 `update-query`, `update-status`, `update-sort`, `random-pick`, `my-location` 이벤트를 `emits`로 상위 전달.
 2. **`TravelSummary.vue`**:
    * 부모의 계산된 `stats` 객체(`count`, `avgTemp`, `avgScore`)를 `props`로 단방향 전달받아 그리드 통계 렌더링.
 3. **`TravelCard.vue`**:
@@ -124,14 +124,36 @@ skala-vue/
 
 #### ② 외부 API 데이터 통신 모듈 분리 (`weatherService.js`)
 
-* 뷰 컴포넌트(`HomeView.vue`) 내에 혼재되어 있던 API 엔드포인트 URL, 헤더 설정, WMO 코드 변환 로직을 `src/services/weatherService.js`로 분리.
+* 뷰 컴포넌트(`HomeView.vue`) 내에 혼재되어 있던 API 엔드포인트 URL, 헤더 설정, WMO 코드 변환 로직 및 `getCurrentUserLocation()`(Geolocation Web API)을 `src/services/weatherService.js`로 분리.
 
 #### ③ Open-Meteo 실시간 날씨 API 연동
 
 * **실시간 날씨 연동**: `Open-Meteo` 공개 API를 통해 9개 도시의 위/경도 기준 실제 실시간 기온 및 WMO 기상 코드를 일괄 조회.
-* **서비스 무중단 Fallback 구조**: 네트워크 장애나 API 오류 발생 시 `public/data/cities.json` 정적 데이터로 전환
+* **서비스 무중단 Fallback 구조**: 네트워크 장애나 API 오류 발생 시 `public/data/cities.json` 정적 데이터로 전환.
 * **데이터 상태 뱃지**: 화면 상단에 `🟢 실시간 날씨 연동 (Open-Meteo)` 또는 `🟡 로컬 데이터 모드` 안내 칩 실시간 표기.
 
 #### ④ 비동기 로딩 상태 관리 (`isLoading`)
 
 * `onMounted` 시점에 날씨 데이터 및 국기 리소스를 병렬 로드하며, 로딩 중에는 스피너 애니메이션을 노출하여 부드러운 사용자 경험 제공.
+
+#### ⑤ 다중 정렬(Sort) 파이프라인 (`sortBy`)
+
+* `filteredCityList` computed 내에 검색어 필터링과 결합된 4단계 정렬 엔진 탑재:
+  * 🏆 **추천 점수 높은 순 (`score-desc`)**: 최적 여행 적합도 내림차순
+  * 🔥 **기온 높은 순 (`temp-desc`)**: 온도가 따뜻한 순서
+  * ❄️ **기온 낮은 순 (`temp-asc`)**: 온도가 시원한 순서
+  * 🔤 **도시명순 (`name-asc`)**: 한글 가나다 오름차순 (`localeCompare`)
+
+#### ⑥ 실시간 동기화 시각 & 스피닝 아이콘 새로고침
+
+* 메인 타이틀 영역(`hero-title-row`)에 최근 데이터 동기화 시각(`lastUpdated`)을 실시간 표기.
+* 텍스트 없는 미니멀 아이콘 버튼(`🔄`) 적용 및 데이터 Fetching(`isLoading: true`) 중 `animation: spin` 무한 회전 효과 제공.
+
+#### ⑦ 랜덤 여행지 뽑기 ("🎲 어디로 갈까?")
+
+* 현재 검색 및 날씨 필터 조건에 부합하는 도시 목록 중 `Math.random()`으로 1개 도시를 무작위 선택하여 하단 상태바 및 포커스 동기화.
+
+#### ⑧ 브라우저 Geolocation 기반 내 위치 날씨 탐색 ("📍 내 위치 날씨")
+
+* HTML5 표준 `navigator.geolocation` API를 통해 현재 사용자 좌표(`lat`, `lon`) 획득.
+* Open-Meteo 실시간 기상 API로 내 위치 기온/상태를 조회하여 도시 카드 목록 최상단에 추가 및 자동 선택.
