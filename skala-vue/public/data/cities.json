@@ -1,0 +1,83 @@
+[
+  {
+    "id": "city_01",
+    "name": "서울",
+    "country": "대한민국",
+    "lat": 37.5665,
+    "lon": 126.9780,
+    "temp": 23,
+    "status": "맑음"
+  },
+  {
+    "id": "city_02",
+    "name": "도쿄",
+    "country": "일본",
+    "lat": 35.6762,
+    "lon": 139.6503,
+    "temp": 21,
+    "status": "맑음"
+  },
+  {
+    "id": "city_03",
+    "name": "파리",
+    "country": "프랑스",
+    "lat": 48.8566,
+    "lon": 2.3522,
+    "temp": 20,
+    "status": "구름"
+  },
+  {
+    "id": "city_04",
+    "name": "런던",
+    "country": "영국",
+    "lat": 51.5074,
+    "lon": -0.1278,
+    "temp": 15,
+    "status": "비"
+  },
+  {
+    "id": "city_05",
+    "name": "뉴욕",
+    "country": "미국",
+    "lat": 40.7128,
+    "lon": -74.0060,
+    "temp": 25,
+    "status": "맑음"
+  },
+  {
+    "id": "city_06",
+    "name": "방콕",
+    "country": "태국",
+    "lat": 13.7563,
+    "lon": 100.5018,
+    "temp": 34,
+    "status": "비"
+  },
+  {
+    "id": "city_07",
+    "name": "시드니",
+    "country": "호주",
+    "lat": -33.8688,
+    "lon": 151.2093,
+    "temp": 18,
+    "status": "맑음"
+  },
+  {
+    "id": "city_08",
+    "name": "카이로",
+    "country": "이집트",
+    "lat": 30.0444,
+    "lon": 31.2357,
+    "temp": 36,
+    "status": "맑음"
+  },
+  {
+    "id": "city_09",
+    "name": "로마",
+    "country": "이탈리아",
+    "lat": 41.9028,
+    "lon": 12.4964,
+    "temp": 26,
+    "status": "맑음"
+  }
+]

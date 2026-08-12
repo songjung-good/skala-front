@@ -3,106 +3,45 @@ import { ref, computed, watch, watchEffect, onMounted } from 'vue'
 import TravelCard from '@/components/travelweather/TravelCard.vue'
 import TravelSearchBar from '@/components/travelweather/TravelSearchBar.vue'
 import TravelSummary from '@/components/travelweather/TravelSummary.vue'
+import {
+  defaultCities,
+  countryMapping,
+  defaultCountryFlags,
+  fetchBaseCities,
+  fetchLiveCityWeather,
+  fetchCountryFlagsApi,
+} from '@/services/weatherService'
 
-// 9개 세계 주요 도시 정적 데이터
-const cityWeatherList = ref([
-  { id: 'city_01', name: '서울', country: '대한민국', temp: 23, status: '맑음' },
-  { id: 'city_02', name: '도쿄', country: '일본', temp: 21, status: '맑음' },
-  { id: 'city_03', name: '파리', country: '프랑스', temp: 20, status: '구름' },
-  { id: 'city_04', name: '런던', country: '영국', temp: 15, status: '비' },
-  { id: 'city_05', name: '뉴욕', country: '미국', temp: 25, status: '맑음' },
-  { id: 'city_06', name: '방콕', country: '태국', temp: 34, status: '비' },
-  { id: 'city_07', name: '시드니', country: '호주', temp: 18, status: '맑음' },
-  { id: 'city_08', name: '카이로', country: '이집트', temp: 36, status: '맑음' },
-  { id: 'city_09', name: '로마', country: '이탈리아', temp: 26, status: '맑음' },
-])
-
-// 검색어 및 필터 상태
+// 상태 관리
+const cityWeatherList = ref([...defaultCities])
+const countryFlags = ref({ ...defaultCountryFlags })
+const isLoading = ref(true)
+const dataSource = ref('loading') // 'live' | 'fallback'
 const searchQuery = ref('')
 const selectedStatus = ref('전체')
 const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁을 확인합니다.')
 
-// RestCountries API 연동 및 국기 이미지 매핑
+// RestCountries API 키
 const RESTCOUNTRIES_API_KEY =
   import.meta.env.RESTCOUNTRIES_API || import.meta.env.VITE_RESTCOUNTRIES_API
 
-// 한글 국가명과 RestCountries 영문 국가명 및 기본 국기 코드 매핑
-const countryMapping = {
-  대한민국: { en: 'South Korea', code: 'kr' },
-  일본: { en: 'Japan', code: 'jp' },
-  프랑스: { en: 'France', code: 'fr' },
-  영국: { en: 'United Kingdom', code: 'gb' },
-  미국: { en: 'United States', code: 'us' },
-  태국: { en: 'Thailand', code: 'th' },
-  호주: { en: 'Australia', code: 'au' },
-  이집트: { en: 'Egypt', code: 'eg' },
-  이탈리아: { en: 'Italy', code: 'it' },
-}
-
-// 국가별 국기 URL 상태 (초기 기본값 제공)
-const countryFlags = ref({
-  대한민국: 'https://flags.restcountries.com/v5/w640/kr.png',
-  일본: 'https://flags.restcountries.com/v5/w640/jp.png',
-  프랑스: 'https://flags.restcountries.com/v5/w640/fr.png',
-  영국: 'https://flags.restcountries.com/v5/w640/gb.png',
-  미국: 'https://flags.restcountries.com/v5/w640/us.png',
-  태국: 'https://flags.restcountries.com/v5/w640/th.png',
-  호주: 'https://flags.restcountries.com/v5/w640/au.png',
-  이집트: 'https://flags.restcountries.com/v5/w640/eg.png',
-  이탈리아: 'https://flags.restcountries.com/v5/w640/it.png',
-})
-
-// RestCountries API 호출 (Vite 프록시 우선 시도 및 폴백 지원)
-const fetchCountryFlags = async () => {
+// 비동기 데이터 초기 로드
+const loadWeatherData = async () => {
+  isLoading.value = true
   try {
-    // 1. Vite 개발 프록시 경로 우선 시도 (Origin 헤더에 의한 403 Forbidden 우회)
-    let url = '/api/restcountries/countries/v5?response_fields=names.common,flag.url_png&limit=100'
-    let response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${RESTCOUNTRIES_API_KEY}`,
-      },
-    })
+    const baseCities = await fetchBaseCities()
+    const weatherResult = await fetchLiveCityWeather(baseCities)
+    cityWeatherList.value = weatherResult.data
+    dataSource.value = weatherResult.source
 
-    // 2. 프록시 응답 실패 시 (배포 환경 등) 직접 엔드포인트 시도
-    if (!response.ok) {
-      url = 'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100'
-      response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${RESTCOUNTRIES_API_KEY}`,
-        },
-      })
-    }
-
-    if (!response.ok) {
-      throw new Error(`국기 API 응답 실패 (상태 코드: ${response.status})`)
-    }
-
-    const json = await response.json()
-    const countryObjects = json?.data?.objects || []
-
-    // 수신된 API 데이터 매핑
-    const apiFlagDict = {}
-    countryObjects.forEach((item) => {
-      if (item?.names?.common && item?.flag?.url_png) {
-        apiFlagDict[item.names.common.toLowerCase()] = item.flag.url_png
-      }
-    })
-
-    // 등록된 도시에 국기 이미지 반영
-    Object.entries(countryMapping).forEach(([krName, meta]) => {
-      const matchedFlag = apiFlagDict[meta.en.toLowerCase()]
-      if (matchedFlag) {
-        countryFlags.value[krName] = matchedFlag
-      }
-    })
-    console.log('✅ RestCountries 국기 API 연동 성공')
-  } catch (error) {
-    console.warn('⚠️ 국기 API 호출 중 오류 발생, 기본 국기 리소스를 유지합니다:', error)
+    countryFlags.value = await fetchCountryFlagsApi(RESTCOUNTRIES_API_KEY)
+  } finally {
+    isLoading.value = false
   }
 }
 
 onMounted(() => {
-  fetchCountryFlags()
+  loadWeatherData()
 })
 
 // 정적 휴리스틱 점수 계산식 (최적기온 22°C 기준 편차 및 기상 상태 가감점)
@@ -214,7 +153,11 @@ const showDetail = (city) => {
 <template>
   <div class="travel-dashboard">
     <header class="hero-section">
-      <h2>🌍 세계 주요 도시 날씨 & 여행지 추천</h2>
+      <div class="hero-title-row">
+        <h2>🌍 세계 주요 도시 날씨 & 여행지 추천</h2>
+        <span v-if="dataSource === 'live'" class="status-chip live">🟢 실시간 날씨 연동 (Open-Meteo)</span>
+        <span v-else-if="dataSource === 'fallback'" class="status-chip fallback">🟡 로컬 데이터 모드</span>
+      </div>
       <p class="desc">실시간 날씨 기반 여행지 점수 및 국가별 기상 가이드</p>
     </header>
 
@@ -230,8 +173,14 @@ const showDetail = (city) => {
     <!-- 통계 요약 (TravelSummary 컴포넌트) -->
     <TravelSummary :stats="stats" />
 
+    <!-- 로딩 상태 표시 -->
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>실시간 날씨 데이터를 동기화하는 중입니다...</p>
+    </div>
+
     <!-- 여행지 도시 카드 리스트 (TravelCard 컴포넌트 분리) -->
-    <section class="city-grid">
+    <section v-else class="city-grid">
       <TravelCard
         v-for="city in filteredCityList"
         :key="city.id"
@@ -265,17 +214,73 @@ const showDetail = (city) => {
   margin-bottom: 0.5rem;
 }
 
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
 .hero-section h2 {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-heading);
-  margin-bottom: 0.3rem;
+  margin: 0;
+}
+
+.status-chip {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.status-chip.live {
+  background: rgba(46, 204, 113, 0.15);
+  color: #27ae60;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.status-chip.fallback {
+  background: rgba(241, 196, 15, 0.15);
+  color: #d68910;
+  border: 1px solid rgba(241, 196, 15, 0.3);
 }
 
 .hero-section .desc {
   color: var(--color-text);
   font-size: 0.95rem;
   opacity: 0.8;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 1rem;
+  color: var(--color-text);
+  background: var(--color-background-soft, #f8f9fa);
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .city-grid {
