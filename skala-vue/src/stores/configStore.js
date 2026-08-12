@@ -11,14 +11,31 @@ export const useConfigStore = defineStore('config', () => {
     return unit.value === 'celsius' ? '℃' : '℉'
   })
 
-  // 3. actions: 버튼 클릭 시 'celsius'와 'fahrenheit'를 토글(스위칭)하는 함수
+  const isCelsius = computed(() => unit.value === 'celsius')
+
+  // 3. actions: 단위 토글 및 온도 변환 헬퍼 함수
   function toggleUnit() {
     unit.value = unit.value === 'celsius' ? 'fahrenheit' : 'celsius'
+  }
+
+  function convertTemp(temp) {
+    if (temp === undefined || temp === null) return 0
+    if (unit.value === 'fahrenheit') {
+      return Math.round((temp * 9) / 5 + 32)
+    }
+    return temp
+  }
+
+  function formatTemp(temp) {
+    return `${convertTemp(temp)}${unitSymbol.value}`
   }
 
   return {
     unit,
     unitSymbol,
+    isCelsius,
     toggleUnit,
+    convertTemp,
+    formatTemp,
   }
 })

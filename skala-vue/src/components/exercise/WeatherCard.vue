@@ -1,4 +1,8 @@
 <script setup>
+import { useConfigStore } from '@/stores/configStore'
+
+const configStore = useConfigStore()
+
 // 1. 상위로부터 단방향 주입받을 객체 데이터 규격 검수 (매크로)
 defineProps({
   cityItem: {
@@ -14,7 +18,7 @@ const emit = defineEmits(['select-card', 'click-detail'])
 <template>
   <div class="weather-card" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
     <h4>{{ cityItem.name }} ({{ cityItem.status }})</h4>
-    <p>현재 기온: {{ cityItem.temp }}°C</p>
+    <p>현재 기온: {{ configStore.formatTemp(cityItem.temp) }}</p>
 
     <!-- 기온별 4단계 뱃지 라벨링 복원 -->
     <span v-if="cityItem.temp >= 27" class="badge hot">🔥 더움 (27도 이상)</span>

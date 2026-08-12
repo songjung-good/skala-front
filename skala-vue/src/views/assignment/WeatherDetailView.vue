@@ -1,9 +1,11 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useConfigStore } from '@/stores/configStore'
 
 const route = useRoute()
 const router = useRouter()
+const configStore = useConfigStore()
 
 const mockDetails = {
   city_01: { name: '대한민국 서울특별시', temp: 28, status: '맑음', humidity: '55%', wind: '2.5m/s', uv: '보통', airQuality: '좋음' },
@@ -42,7 +44,7 @@ watch(() => route.params.cityId, (newId) => {
     <div v-if="cityData" class="info-card">
       <h4>📍 지정 지역: {{ cityData.name }}</h4>
       <div class="detail-grid">
-        <p>실시간 기온: <strong>{{ cityData.temp }}°C</strong></p>
+        <p>실시간 기온: <strong>{{ configStore.formatTemp(cityData.temp) }}</strong></p>
         <p>기상 현황: <strong>{{ cityData.status }}</strong></p>
         <p>대기 습도: {{ cityData.humidity }}</p>
         <p>현재 풍속: {{ cityData.wind }}</p>

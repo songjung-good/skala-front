@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useConfigStore } from '@/stores/configStore'
 
 const router = useRouter()
+const configStore = useConfigStore()
 
 const cityStats = ref([
   { name: '대구', temp: 29, status: '맑음', label: '최고 기온 🥇' },
@@ -14,7 +16,8 @@ const cityStats = ref([
 
 const averageTemp = computed(() => {
   const total = cityStats.value.reduce((acc, cur) => acc + cur.temp, 0)
-  return (total / cityStats.value.length).toFixed(1)
+  const avg = (total / cityStats.value.length).toFixed(1)
+  return configStore.formatTemp(avg)
 })
 </script>
 
@@ -26,7 +29,7 @@ const averageTemp = computed(() => {
     <div class="summary-cards">
       <div class="stat-badge">
         <span>전국 평균 기온</span>
-        <strong>{{ averageTemp }}°C</strong>
+        <strong>{{ averageTemp }}</strong>
       </div>
       <div class="stat-badge">
         <span>모니터링 지역</span>
@@ -39,7 +42,7 @@ const averageTemp = computed(() => {
       <div v-for="item in cityStats" :key="item.name" class="stat-row">
         <span class="city-name">{{ item.name }}</span>
         <span class="status">{{ item.status }}</span>
-        <span class="temp">{{ item.temp }}°C</span>
+        <span class="temp">{{ configStore.formatTemp(item.temp) }}</span>
         <span class="tag">{{ item.label }}</span>
       </div>
     </div>

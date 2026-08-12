@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import UnitToggler from '@/components/exercise/UnitToggler.vue'
 </script>
 
 <template>
@@ -13,6 +14,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/assignment/about" class="tab-item">ℹ️ 서비스 소개</RouterLink>
         <RouterLink to="/assignment/stats" class="tab-item">📊 통계 분석</RouterLink>
       </div>
+      <UnitToggler />
     </div>
     <div class="sub-body">
       <RouterView />

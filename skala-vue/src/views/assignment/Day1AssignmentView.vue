@@ -32,12 +32,7 @@ import UnitToggler from '@/components/exercise/UnitToggler.vue'
           <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
         </nav>
         <main>
-          <RouterView />
-          <!-- RouterView v-slot="{ Component }">
-          <KeepAlive>
-            <component :is="Component" />
-          </KeepAlive>
-        </RouterView-->
+          <WeatherParent />
         </main>
       </div>
     </div>
@@ -52,7 +47,7 @@ import UnitToggler from '@/components/exercise/UnitToggler.vue'
           <UnitToggler />
         </nav>
         <main>
-          <RouterView />
+          <WeatherParent />
         </main>
       </div>
     </div>
