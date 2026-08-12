@@ -444,7 +444,7 @@ onMounted(() => {
 /* 🌟 2. 화면 우상단 최상위 고정: 뷰 모드 전환 스위치 (Teleport) */
 .global-floating-map-toggle {
   position: fixed;
-  top: 1.25rem;
+  top: 5.25rem;
   right: 1.5rem;
   z-index: 999999;
   display: flex;

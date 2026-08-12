@@ -678,33 +678,57 @@ export function getOutfitAndItems({
 /**
  * 실시간 전체 도시 날씨 데이터 조회 (Open-Meteo 멀티 쿼리)
  */
-export async function fetchLiveWeatherData(cities = WORLD_DESTINATIONS) {
-  if (!cities || cities.length === 0) return []
-
-  const lats = cities.map((c) => c.lat).join(',')
-  const lons = cities.map((c) => c.lon).join(',')
-
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&timezone=auto`
-
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`날씨 API 응답 오류: ${response.statusText}`)
+/**
+ * 도시별 기본/모의 기상 데이터를 생성하는 안전 Fallback 생성기
+ */
+export function generateFallbackWeatherData(cities = WORLD_DESTINATIONS) {
+  const fallbackPresets = {
+    seoul: { temp: 22, apparentTemp: 22, humidity: 55, windSpeed: 10, weatherCode: 0 },
+    suwon: { temp: 21, apparentTemp: 21, humidity: 58, windSpeed: 11, weatherCode: 0 },
+    incheon: { temp: 20, apparentTemp: 19, humidity: 65, windSpeed: 16, weatherCode: 1 },
+    busan: { temp: 24, apparentTemp: 24, humidity: 60, windSpeed: 15, weatherCode: 1 },
+    daegu: { temp: 26, apparentTemp: 26, humidity: 45, windSpeed: 9, weatherCode: 0 },
+    daejeon: { temp: 22, apparentTemp: 22, humidity: 52, windSpeed: 10, weatherCode: 0 },
+    gwangju: { temp: 23, apparentTemp: 23, humidity: 56, windSpeed: 11, weatherCode: 0 },
+    ulsan: { temp: 23, apparentTemp: 23, humidity: 55, windSpeed: 14, weatherCode: 1 },
+    jeju: { temp: 25, apparentTemp: 26, humidity: 68, windSpeed: 18, weatherCode: 2 },
+    gangneung: { temp: 21, apparentTemp: 20, humidity: 50, windSpeed: 13, weatherCode: 0 },
+    tokyo: { temp: 20, apparentTemp: 20, humidity: 60, windSpeed: 12, weatherCode: 1 },
+    osaka: { temp: 22, apparentTemp: 22, humidity: 55, windSpeed: 11, weatherCode: 0 },
+    fukuoka: { temp: 23, apparentTemp: 23, humidity: 58, windSpeed: 13, weatherCode: 0 },
+    paris: { temp: 18, apparentTemp: 17, humidity: 65, windSpeed: 14, weatherCode: 2 },
+    london: { temp: 15, apparentTemp: 14, humidity: 75, windSpeed: 18, weatherCode: 61 },
+    newyork: { temp: 23, apparentTemp: 24, humidity: 50, windSpeed: 15, weatherCode: 0 },
+    bangkok: { temp: 32, apparentTemp: 37, humidity: 75, windSpeed: 8, weatherCode: 80 },
+    sydney: { temp: 19, apparentTemp: 19, humidity: 58, windSpeed: 20, weatherCode: 0 },
+    cairo: { temp: 31, apparentTemp: 30, humidity: 35, windSpeed: 16, weatherCode: 0 },
+    rome: { temp: 24, apparentTemp: 25, humidity: 48, windSpeed: 11, weatherCode: 0 },
+    barcelona: { temp: 23, apparentTemp: 23, humidity: 55, windSpeed: 12, weatherCode: 0 },
+    danang: { temp: 30, apparentTemp: 34, humidity: 72, windSpeed: 10, weatherCode: 2 },
+    singapore: { temp: 31, apparentTemp: 36, humidity: 78, windSpeed: 9, weatherCode: 80 },
+    taipei: { temp: 27, apparentTemp: 29, humidity: 68, windSpeed: 12, weatherCode: 1 },
+    interlaken: { temp: 14, apparentTemp: 13, humidity: 60, windSpeed: 8, weatherCode: 2 },
+    vladivostok: { temp: 8, apparentTemp: 5, humidity: 70, windSpeed: 22, weatherCode: 3 },
   }
 
-  const data = await response.json()
-  const results = Array.isArray(data) ? data : [data]
-
   return cities.map((city, index) => {
-    const weatherData = results[index]?.current || {}
-    const weatherInfo = parseWeatherCode(weatherData.weather_code ?? 0)
-    const temp = weatherData.temperature_2m ?? 20
-    const apparentTemp = weatherData.apparent_temperature ?? temp
-    const humidity = weatherData.relative_humidity_2m ?? 50
-    const windSpeed = weatherData.wind_speed_10m ?? 0
-    const windDirection = weatherData.wind_direction_10m ?? 0
-    const pressure = weatherData.surface_pressure ?? 1013
-    const precipitation = weatherData.precipitation ?? 0
-    const weatherCode = weatherData.weather_code ?? 0
+    const preset = fallbackPresets[city.id] || {
+      temp: (city.temp ?? 20) + (index % 3),
+      apparentTemp: city.temp ?? 20,
+      humidity: 50 + ((index * 5) % 30),
+      windSpeed: 10 + ((index * 2) % 15),
+      weatherCode: index % 4 === 0 ? 0 : index % 4 === 1 ? 1 : index % 4 === 2 ? 2 : 61,
+    }
+
+    const weatherInfo = parseWeatherCode(preset.weatherCode)
+    const temp = preset.temp
+    const apparentTemp = preset.apparentTemp
+    const humidity = preset.humidity
+    const windSpeed = preset.windSpeed
+    const windDirection = 180
+    const pressure = 1013
+    const precipitation = preset.weatherCode === 61 ? 2.5 : 0
+    const weatherCode = preset.weatherCode
     const tempLabel = getTemperatureLabel(temp)
 
     const scoreInfo = calculateTravelScore({
@@ -738,7 +762,7 @@ export async function fetchLiveWeatherData(cities = WORLD_DESTINATIONS) {
       windDirection,
       pressure,
       precipitation,
-      isDay: weatherData.is_day === 1,
+      isDay: true,
       weatherCode,
       status: weatherInfo.status,
       icon: weatherInfo.icon,
@@ -754,9 +778,165 @@ export async function fetchLiveWeatherData(cities = WORLD_DESTINATIONS) {
       travelAdvice: scoreInfo.travelAdvice,
       outfitText: tipsInfo.outfitText,
       essentialItems: tipsInfo.essentialItems,
+      isFallback: true,
       updatedAt: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
     }
   })
+}
+
+/**
+ * 실시간 전체 도시 날씨 데이터 조회 (Open-Meteo 멀티 쿼리 + 안전 Fallback)
+ */
+export async function fetchLiveWeatherData(cities = WORLD_DESTINATIONS) {
+  if (!cities || cities.length === 0) return []
+
+  try {
+    const lats = cities.map((c) => c.lat).join(',')
+    const lons = cities.map((c) => c.lon).join(',')
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&timezone=auto`
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 6000)
+
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`날씨 API 응답 오류: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const results = Array.isArray(data) ? data : [data]
+
+    return cities.map((city, index) => {
+      const weatherData = results[index]?.current
+      if (!weatherData) {
+        return generateFallbackWeatherData([city])[0]
+      }
+
+      const weatherInfo = parseWeatherCode(weatherData.weather_code ?? 0)
+      const temp = weatherData.temperature_2m ?? 20
+      const apparentTemp = weatherData.apparent_temperature ?? temp
+      const humidity = weatherData.relative_humidity_2m ?? 50
+      const windSpeed = weatherData.wind_speed_10m ?? 0
+      const windDirection = weatherData.wind_direction_10m ?? 0
+      const pressure = weatherData.surface_pressure ?? 1013
+      const precipitation = weatherData.precipitation ?? 0
+      const weatherCode = weatherData.weather_code ?? 0
+      const tempLabel = getTemperatureLabel(temp)
+
+      const scoreInfo = calculateTravelScore({
+        temp,
+        weatherCode,
+        humidity,
+        windSpeed,
+        precipitation,
+      })
+
+      const tipsInfo = getOutfitAndItems({
+        temp,
+        weatherCode,
+        precipitation,
+        windSpeed,
+      })
+
+      return {
+        id: city.id,
+        name: city.name,
+        engName: city.engName,
+        country: city.country || '',
+        continent: city.continent || '',
+        tag: city.tag || '',
+        lat: city.lat,
+        lon: city.lon,
+        temp,
+        apparentTemp,
+        humidity,
+        windSpeed,
+        windDirection,
+        pressure,
+        precipitation,
+        isDay: weatherData.is_day === 1,
+        weatherCode,
+        status: weatherInfo.status,
+        icon: weatherInfo.icon,
+        category: weatherInfo.category,
+        description: weatherInfo.description,
+        tempLabel: tempLabel.label,
+        tempShortLabel: tempLabel.shortLabel,
+        tempBadgeClass: tempLabel.badgeClass,
+        travelScore: scoreInfo.travelScore,
+        travelGrade: scoreInfo.travelGrade,
+        travelScoreClass: scoreInfo.travelScoreClass,
+        travelVerdict: scoreInfo.travelVerdict,
+        travelAdvice: scoreInfo.travelAdvice,
+        outfitText: tipsInfo.outfitText,
+        essentialItems: tipsInfo.essentialItems,
+        isFallback: false,
+        updatedAt: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+      }
+    })
+  } catch (err) {
+    console.warn('⚠️ Open-Meteo API 통신 지연/오류 발생 -> 안전 Fallback 모의 데이터로 자동 복구합니다:', err)
+    return generateFallbackWeatherData(cities)
+  }
+}
+
+/**
+ * 특정 도시의 상세 기상 예보 Fallback 생성기
+ */
+export function generateFallbackCityDetails(city) {
+  const fallback = generateFallbackWeatherData([city])[0]
+  const hours = []
+  const currentHour = new Date().getHours()
+
+  for (let i = 0; i < 24; i++) {
+    const h = (currentHour + i) % 24
+    const hourStr = `${String(h).padStart(2, '0')}:00`
+    const tempOffset = Math.sin((i / 24) * Math.PI * 2) * 4
+    hours.push({
+      time: hourStr,
+      fullTime: `2026-08-12T${hourStr}:00`,
+      temp: Math.round(fallback.temp + tempOffset),
+      humidity: Math.max(30, Math.min(90, Math.round(fallback.humidity - tempOffset * 2))),
+      precipProb: fallback.weatherCode === 61 ? 70 : 10,
+      windSpeed: fallback.windSpeed,
+      weatherCode: fallback.weatherCode,
+      icon: fallback.icon,
+      status: fallback.status,
+    })
+  }
+
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토']
+  const dailyList = []
+  const today = new Date()
+
+  for (let d = 0; d < 7; d++) {
+    const targetDate = new Date(today)
+    targetDate.setDate(today.getDate() + d)
+    const month = targetDate.getMonth() + 1
+    const date = targetDate.getDate()
+    const dayName = daysOfWeek[targetDate.getDay()]
+    const dateStr = targetDate.toISOString().slice(0, 10)
+
+    dailyList.push({
+      date: dateStr,
+      displayDate: d === 0 ? `오늘 ${month}.${date} (${dayName})` : `${month}.${date} (${dayName})`,
+      weatherCode: fallback.weatherCode,
+      status: fallback.status,
+      icon: fallback.icon,
+      maxTemp: fallback.temp + 2 + (d % 2),
+      minTemp: fallback.temp - 4 - (d % 2),
+      precipProb: fallback.weatherCode === 61 ? 60 : 15,
+    })
+  }
+
+  return {
+    ...fallback,
+    hourlyList: hours,
+    dailyList,
+  }
 }
 
 /**
@@ -766,131 +946,143 @@ export async function fetchCityFullDetails(city) {
   const lat = city.lat
   const lon = city.lon
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=7&timezone=auto`
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=7&timezone=auto`
 
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`상세 예보 API 오류: ${response.statusText}`)
-  }
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 6000)
 
-  const data = await response.json()
-  const current = data.current || {}
-  const hourly = data.hourly || {}
-  const daily = data.daily || {}
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
 
-  const weatherInfo = parseWeatherCode(current.weather_code ?? 0)
-  const temp = current.temperature_2m ?? 20
-  const apparentTemp = current.apparent_temperature ?? temp
-  const humidity = current.relative_humidity_2m ?? 50
-  const windSpeed = current.wind_speed_10m ?? 0
-  const windDirection = current.wind_direction_10m ?? 0
-  const precipitation = current.precipitation ?? 0
-  const pressure = current.surface_pressure ?? 1013
-  const weatherCode = current.weather_code ?? 0
+    if (!response.ok) {
+      throw new Error(`상세 예보 API 오류: ${response.statusText}`)
+    }
 
-  const travelScoreInfo = calculateTravelScore({
-    temp,
-    weatherCode,
-    humidity,
-    windSpeed,
-    precipitation,
-  })
+    const data = await response.json()
+    const current = data.current || {}
+    const hourly = data.hourly || {}
+    const daily = data.daily || {}
 
-  const tipsInfo = getOutfitAndItems({
-    temp,
-    weatherCode,
-    precipitation,
-    windSpeed,
-  })
+    const weatherInfo = parseWeatherCode(current.weather_code ?? 0)
+    const temp = current.temperature_2m ?? 20
+    const apparentTemp = current.apparent_temperature ?? temp
+    const humidity = current.relative_humidity_2m ?? 50
+    const windSpeed = current.wind_speed_10m ?? 0
+    const windDirection = current.wind_direction_10m ?? 0
+    const precipitation = current.precipitation ?? 0
+    const pressure = current.surface_pressure ?? 1013
+    const weatherCode = current.weather_code ?? 0
 
-  // 24시간 시간별 예보
-  const nowISO = new Date().toISOString().slice(0, 13)
-  let startIndex = (hourly.time || []).findIndex((t) => t.startsWith(nowISO))
-  if (startIndex === -1) startIndex = 0
-  const sliceEnd = startIndex + 24
+    const travelScoreInfo = calculateTravelScore({
+      temp,
+      weatherCode,
+      humidity,
+      windSpeed,
+      precipitation,
+    })
 
-  const hourlyList = (hourly.time || []).slice(startIndex, sliceEnd).map((t, idx) => {
-    const rawIdx = startIndex + idx
-    const code = (hourly.weather_code || [])[rawIdx] ?? 0
-    const info = parseWeatherCode(code)
-    const hourStr = t.split('T')[1]?.slice(0, 5) || t
+    const tipsInfo = getOutfitAndItems({
+      temp,
+      weatherCode,
+      precipitation,
+      windSpeed,
+    })
+
+    // 24시간 시간별 예보
+    const nowISO = new Date().toISOString().slice(0, 13)
+    let startIndex = (hourly.time || []).findIndex((t) => t.startsWith(nowISO))
+    if (startIndex === -1) startIndex = 0
+    const sliceEnd = startIndex + 24
+
+    const hourlyList = (hourly.time || []).slice(startIndex, sliceEnd).map((t, idx) => {
+      const rawIdx = startIndex + idx
+      const code = (hourly.weather_code || [])[rawIdx] ?? 0
+      const info = parseWeatherCode(code)
+      const hourStr = t.split('T')[1]?.slice(0, 5) || t
+
+      return {
+        time: hourStr,
+        fullTime: t,
+        temp: (hourly.temperature_2m || [])[rawIdx] ?? 0,
+        humidity: (hourly.relative_humidity_2m || [])[rawIdx] ?? 0,
+        precipProb: (hourly.precipitation_probability || [])[rawIdx] ?? 0,
+        windSpeed: (hourly.wind_speed_10m || [])[rawIdx] ?? 0,
+        weatherCode: code,
+        icon: info.icon,
+        status: info.status,
+      }
+    })
+
+    // 7일간 일별 예보
+    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토']
+    const todayStr = new Date().toISOString().slice(0, 10)
+
+    const dailyList = (daily.time || []).map((dateStr, idx) => {
+      const code = (daily.weather_code || [])[idx] ?? 0
+      const info = parseWeatherCode(code)
+      const maxTemp = (daily.temperature_2m_max || [])[idx] ?? 0
+      const minTemp = (daily.temperature_2m_min || [])[idx] ?? 0
+      const precipProb = (daily.precipitation_probability_max || [])[idx] ?? 0
+
+      const dateObj = new Date(dateStr)
+      const month = dateObj.getMonth() + 1
+      const date = dateObj.getDate()
+      const dayName = daysOfWeek[dateObj.getDay()]
+
+      let displayDate = `${month}.${date} (${dayName})`
+      if (dateStr === todayStr) {
+        displayDate = `오늘 ${month}.${date} (${dayName})`
+      }
+
+      return {
+        date: dateStr,
+        displayDate,
+        weatherCode: code,
+        status: info.status,
+        icon: info.icon,
+        maxTemp,
+        minTemp,
+        precipProb,
+      }
+    })
 
     return {
-      time: hourStr,
-      fullTime: t,
-      temp: (hourly.temperature_2m || [])[rawIdx] ?? 0,
-      humidity: (hourly.relative_humidity_2m || [])[rawIdx] ?? 0,
-      precipProb: (hourly.precipitation_probability || [])[rawIdx] ?? 0,
-      windSpeed: (hourly.wind_speed_10m || [])[rawIdx] ?? 0,
-      weatherCode: code,
-      icon: info.icon,
-      status: info.status,
+      id: city.id,
+      name: city.name,
+      engName: city.engName,
+      country: city.country || '',
+      continent: city.continent || '',
+      tag: city.tag || '',
+      lat,
+      lon,
+      temp,
+      apparentTemp,
+      humidity,
+      windSpeed,
+      windDirection,
+      pressure,
+      precipitation,
+      isDay: current.is_day === 1,
+      weatherCode,
+      status: weatherInfo.status,
+      icon: weatherInfo.icon,
+      category: weatherInfo.category,
+      description: weatherInfo.description,
+      travelScore: travelScoreInfo.travelScore,
+      travelGrade: travelScoreInfo.travelGrade,
+      travelScoreClass: travelScoreInfo.travelScoreClass,
+      travelVerdict: travelScoreInfo.travelVerdict,
+      travelAdvice: travelScoreInfo.travelAdvice,
+      outfitText: tipsInfo.outfitText,
+      essentialItems: tipsInfo.essentialItems,
+      hourlyList,
+      dailyList,
+      isFallback: false,
     }
-  })
-
-  // 7일간 일별 예보
-  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토']
-  const todayStr = new Date().toISOString().slice(0, 10)
-
-  const dailyList = (daily.time || []).map((dateStr, idx) => {
-    const code = (daily.weather_code || [])[idx] ?? 0
-    const info = parseWeatherCode(code)
-    const maxTemp = (daily.temperature_2m_max || [])[idx] ?? 0
-    const minTemp = (daily.temperature_2m_min || [])[idx] ?? 0
-    const precipProb = (daily.precipitation_probability_max || [])[idx] ?? 0
-
-    const dateObj = new Date(dateStr)
-    const month = dateObj.getMonth() + 1
-    const date = dateObj.getDate()
-    const dayName = daysOfWeek[dateObj.getDay()]
-
-    let displayDate = `${month}.${date} (${dayName})`
-    if (dateStr === todayStr) {
-      displayDate = `오늘 ${month}.${date} (${dayName})`
-    }
-
-    return {
-      date: dateStr,
-      displayDate,
-      weatherCode: code,
-      status: info.status,
-      icon: info.icon,
-      maxTemp,
-      minTemp,
-      precipProb,
-    }
-  })
-
-  return {
-    id: city.id,
-    name: city.name,
-    engName: city.engName,
-    country: city.country || '',
-    continent: city.continent || '',
-    tag: city.tag || '',
-    lat,
-    lon,
-    temp,
-    apparentTemp,
-    humidity,
-    windSpeed,
-    windDirection,
-    precipitation,
-    pressure,
-    weatherCode,
-    status: weatherInfo.status,
-    icon: weatherInfo.icon,
-    category: weatherInfo.category,
-    description: weatherInfo.description,
-    travelScore: travelScoreInfo.travelScore,
-    travelGrade: travelScoreInfo.travelGrade,
-    travelScoreClass: travelScoreInfo.travelScoreClass,
-    travelVerdict: travelScoreInfo.travelVerdict,
-    travelAdvice: travelScoreInfo.travelAdvice,
-    outfitText: tipsInfo.outfitText,
-    essentialItems: tipsInfo.essentialItems,
-    hourlyList,
-    dailyList,
+  } catch (err) {
+    console.warn(`⚠️ [${city.name}] 상세 기상 API 실패 -> Fallback 데이터 생성:`, err)
+    return generateFallbackCityDetails(city)
   }
 }
 
