@@ -24,3 +24,5 @@ yarn-error.log
 
 docs/
 source_code/
+
+.env

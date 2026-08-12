@@ -10,9 +10,19 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  server: {
+    proxy: {
+      '/api/restcountries': {
+        target: 'https://api.restcountries.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/restcountries/, ''),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  envPrefix: ['VITE_', 'RESTCOUNTRIES_'],
 })

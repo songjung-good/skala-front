@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted } from 'vue'
+import TravelCard from '@/components/travelweather/TravelCard.vue'
 
-// ponytail: 정적 9개 세계 주요 도시 데이터. 향후 국기(Flag Emoji / SVG) 및 날씨 API 연결 예정
+// 9개 세계 주요 도시 정적 데이터
 const cityWeatherList = ref([
   { id: 'city_01', name: '서울', country: '대한민국', temp: 23, status: '맑음' },
   { id: 'city_02', name: '도쿄', country: '일본', temp: 21, status: '맑음' },
@@ -19,7 +20,90 @@ const searchQuery = ref('')
 const selectedStatus = ref('전체')
 const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁을 확인합니다.')
 
-// ponytail: 정적 휴리스틱 점수 계산식 (최적기온 22°C 기준 편차 및 기상 상태 가감점). 실무 시 습도/강수확률 계수 추가
+// RestCountries API 연동 및 국기 이미지 매핑
+const RESTCOUNTRIES_API_KEY =
+  import.meta.env.RESTCOUNTRIES_API || import.meta.env.VITE_RESTCOUNTRIES_API
+
+// 한글 국가명과 RestCountries 영문 국가명 및 기본 국기 코드 매핑
+const countryMapping = {
+  대한민국: { en: 'South Korea', code: 'kr' },
+  일본: { en: 'Japan', code: 'jp' },
+  프랑스: { en: 'France', code: 'fr' },
+  영국: { en: 'United Kingdom', code: 'gb' },
+  미국: { en: 'United States', code: 'us' },
+  태국: { en: 'Thailand', code: 'th' },
+  호주: { en: 'Australia', code: 'au' },
+  이집트: { en: 'Egypt', code: 'eg' },
+  이탈리아: { en: 'Italy', code: 'it' },
+}
+
+// 국가별 국기 URL 상태 (초기 기본값 제공)
+const countryFlags = ref({
+  대한민국: 'https://flags.restcountries.com/v5/w640/kr.png',
+  일본: 'https://flags.restcountries.com/v5/w640/jp.png',
+  프랑스: 'https://flags.restcountries.com/v5/w640/fr.png',
+  영국: 'https://flags.restcountries.com/v5/w640/gb.png',
+  미국: 'https://flags.restcountries.com/v5/w640/us.png',
+  태국: 'https://flags.restcountries.com/v5/w640/th.png',
+  호주: 'https://flags.restcountries.com/v5/w640/au.png',
+  이집트: 'https://flags.restcountries.com/v5/w640/eg.png',
+  이탈리아: 'https://flags.restcountries.com/v5/w640/it.png',
+})
+
+// RestCountries API 호출 (Vite 프록시 우선 시도 및 폴백 지원)
+const fetchCountryFlags = async () => {
+  try {
+    // 1. Vite 개발 프록시 경로 우선 시도 (Origin 헤더에 의한 403 Forbidden 우회)
+    let url = '/api/restcountries/countries/v5?response_fields=names.common,flag.url_png&limit=100'
+    let response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${RESTCOUNTRIES_API_KEY}`,
+      },
+    })
+
+    // 2. 프록시 응답 실패 시 (배포 환경 등) 직접 엔드포인트 시도
+    if (!response.ok) {
+      url = 'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100'
+      response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${RESTCOUNTRIES_API_KEY}`,
+        },
+      })
+    }
+
+    if (!response.ok) {
+      throw new Error(`국기 API 응답 실패 (상태 코드: ${response.status})`)
+    }
+
+    const json = await response.json()
+    const countryObjects = json?.data?.objects || []
+
+    // 수신된 API 데이터 매핑
+    const apiFlagDict = {}
+    countryObjects.forEach((item) => {
+      if (item?.names?.common && item?.flag?.url_png) {
+        apiFlagDict[item.names.common.toLowerCase()] = item.flag.url_png
+      }
+    })
+
+    // 등록된 도시에 국기 이미지 반영
+    Object.entries(countryMapping).forEach(([krName, meta]) => {
+      const matchedFlag = apiFlagDict[meta.en.toLowerCase()]
+      if (matchedFlag) {
+        countryFlags.value[krName] = matchedFlag
+      }
+    })
+    console.log('✅ RestCountries 국기 API 연동 성공')
+  } catch (error) {
+    console.warn('⚠️ 국기 API 호출 중 오류 발생, 기본 국기 리소스를 유지합니다:', error)
+  }
+}
+
+onMounted(() => {
+  fetchCountryFlags()
+})
+
+// 정적 휴리스틱 점수 계산식 (최적기온 22°C 기준 편차 및 기상 상태 가감점)
 const calculateTravelScore = (temp, status) => {
   let score = 100
 
@@ -29,13 +113,13 @@ const calculateTravelScore = (temp, status) => {
 
   // 2. 날씨 상태별 가감점
   const statusPenalties = {
-    '맑음': 0,
-    '구름': -5,
-    '흐림': -15,
-    '비': -25,
-    '눈': -20,
+    맑음: 0,
+    구름: -5,
+    흐림: -15,
+    비: -25,
+    눈: -20,
   }
-  score += (statusPenalties[status] ?? -10)
+  score += statusPenalties[status] ?? -10
 
   // 0~100점 범위 제한
   return Math.max(0, Math.min(100, score))
@@ -54,14 +138,19 @@ const statusOptions = computed(() => {
   return ['전체', ...new Set(statuses)]
 })
 
-// 가공된 도시 목록 (여행 점수 포함)
+// 가공된 도시 목록 (여행 점수 및 국기 URL 포함)
 const enrichedCityList = computed(() => {
   return cityWeatherList.value.map((city) => {
     const score = calculateTravelScore(city.temp, city.status)
+    const flagUrl =
+      countryFlags.value[city.country] ||
+      `https://flags.restcountries.com/v5/w640/${countryMapping[city.country]?.code || 'kr'}.png`
+
     return {
       ...city,
       score,
       badge: getScoreBadge(score),
+      flagUrl,
     }
   })
 })
@@ -75,8 +164,7 @@ const filteredCityList = computed(() => {
       !query ||
       city.name.toLowerCase().includes(query) ||
       city.country.toLowerCase().includes(query)
-    const matchesStatus =
-      selectedStatus.value === '전체' || city.status === selectedStatus.value
+    const matchesStatus = selectedStatus.value === '전체' || city.status === selectedStatus.value
 
     return matchesQuery && matchesStatus
   })
@@ -103,14 +191,20 @@ watch(selectedCityInfo, (newVal, oldVal) => {
 })
 
 watchEffect(() => {
-  console.log(`[검색/필터] '${searchQuery.value}' | '${selectedStatus.value}' (결과: ${filteredCityList.value.length}개)`)
+  console.log(
+    `[검색/필터] '${searchQuery.value}' | '${selectedStatus.value}' (결과: ${filteredCityList.value.length}개)`,
+  )
 })
+
+const handleSelectCity = (city) => {
+  selectedCityInfo.value = `${city.name}(${city.country}) 선택됨 - 추천 점수 ${city.score}점`
+}
 
 const showDetail = (city) => {
   window.alert(
     `[${city.name}, ${city.country}]\n` +
-    `현재 날씨: ${city.status} (${city.temp}°C)\n` +
-    `여행 추천 점수: ${city.score}점 (${city.badge.grade})`
+      `현재 날씨: ${city.status} (${city.temp}°C)\n` +
+      `여행 추천 점수: ${city.score}점 (${city.badge.grade})`,
   )
 }
 </script>
@@ -118,8 +212,8 @@ const showDetail = (city) => {
 <template>
   <div class="travel-dashboard">
     <header class="hero-section">
-      <h2>🌍 세계 주요 도시 날씨 & 여행 추천 가이드</h2>
-      <p class="desc">실시간 날씨 기반 100점 만점 여행 추천 지수</p>
+      <h2>🌍 세계 주요 도시 날씨 & 여행지 추천</h2>
+      <p class="desc">실시간 날씨 기반 여행지 점수 및 국가별 기상 가이드</p>
     </header>
 
     <!-- 검색 및 필터 -->
@@ -167,34 +261,15 @@ const showDetail = (city) => {
       </div>
     </div>
 
-    <!-- 도시 리스트 -->
+    <!-- 여행지 도시 카드 리스트 (TravelCard 컴포넌트 분리) -->
     <section class="city-grid">
-      <div
+      <TravelCard
         v-for="city in filteredCityList"
         :key="city.id"
-        class="city-card"
-        @click="selectedCityInfo = `${city.name}(${city.country}) 선택됨 - 추천 점수 ${city.score}점`"
-      >
-        <div class="card-header">
-          <div class="city-title">
-            <h4>{{ city.name }}</h4>
-            <span class="country-name">{{ city.country }}</span>
-          </div>
-          <span class="score-badge" :class="city.badge.class">
-            {{ city.badge.emoji }} {{ city.score }}점
-          </span>
-        </div>
-
-        <div class="weather-info">
-          <p class="temp">{{ city.temp }}°C</p>
-          <p class="status">{{ city.status }}</p>
-        </div>
-
-        <div class="card-footer">
-          <span class="grade-text">{{ city.badge.grade }}</span>
-          <button class="btn-detail" @click.stop="showDetail(city)">상세보기</button>
-        </div>
-      </div>
+        :city="city"
+        @select="handleSelectCity"
+        @detail="showDetail"
+      />
 
       <p v-if="filteredCityList.length === 0" class="empty-state">
         검색 결과와 일치하는 여행지가 없습니다.
@@ -330,120 +405,8 @@ const showDetail = (city) => {
 
 .city-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-}
-
-.city-card {
-  background: var(--color-background-soft, #fff);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.city-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.city-title h4 {
-  font-size: 1.1rem;
-  margin: 0;
-  color: var(--color-heading);
-}
-
-.country-name {
-  font-size: 0.75rem;
-  color: var(--color-text);
-  opacity: 0.7;
-}
-
-.score-badge {
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-}
-
-.score-top {
-  background: rgba(46, 204, 113, 0.15);
-  color: #27ae60;
-}
-
-.score-good {
-  background: rgba(52, 152, 219, 0.15);
-  color: #2980b9;
-}
-
-.score-normal {
-  background: rgba(241, 196, 15, 0.15);
-  color: #d68910;
-}
-
-.score-bad {
-  background: rgba(231, 76, 60, 0.15);
-  color: #c0392b;
-}
-
-.weather-info {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-}
-
-.temp {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0;
-  color: var(--color-heading);
-}
-
-.status {
-  font-size: 0.95rem;
-  margin: 0;
-  color: var(--color-text);
-}
-
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px dashed var(--color-border);
-  padding-top: 0.6rem;
-}
-
-.grade-text {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-text);
-  opacity: 0.85;
-}
-
-.btn-detail {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.75rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-background, #fff);
-  color: var(--color-text);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-detail:hover {
-  background: hsla(160, 100%, 37%, 0.15);
-  border-color: hsla(160, 100%, 37%, 1);
-  color: hsla(160, 100%, 37%, 1);
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1.1rem;
 }
 
 .empty-state {
