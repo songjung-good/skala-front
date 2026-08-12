@@ -149,3 +149,32 @@ export const fetchCountryFlagsApi = async (apiKey) => {
   }
   return flags
 }
+
+/**
+ * 브라우저 Geolocation API를 통한 현재 위치 좌표 조회
+ */
+export const getCurrentUserLocation = () => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('브라우저가 위치 정보를 지원하지 않습니다.'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          id: 'my_location',
+          name: '내 현재 위치',
+          country: '대한민국',
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+          temp: 20,
+          status: '맑음',
+        })
+      },
+      (error) => {
+        reject(new Error('위치 권한이 거부되었거나 위치를 가져올 수 없습니다.'))
+      },
+      { timeout: 10000 },
+    )
+  })
+}

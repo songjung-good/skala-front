@@ -10,22 +10,26 @@ import {
   fetchBaseCities,
   fetchLiveCityWeather,
   fetchCountryFlagsApi,
+  getCurrentUserLocation,
 } from '@/services/weatherService'
 
 // 상태 관리
 const cityWeatherList = ref([...defaultCities])
 const countryFlags = ref({ ...defaultCountryFlags })
 const isLoading = ref(true)
+const isLoadingLocation = ref(false)
 const dataSource = ref('loading') // 'live' | 'fallback'
 const searchQuery = ref('')
 const selectedStatus = ref('전체')
+const sortBy = ref('score-desc') // 'score-desc' | 'temp-desc' | 'temp-asc' | 'name-asc'
+const lastUpdated = ref('')
 const selectedCityInfo = ref('도시 카드를 클릭하면 상세 여행 팁을 확인합니다.')
 
 // RestCountries API 키
 const RESTCOUNTRIES_API_KEY =
   import.meta.env.RESTCOUNTRIES_API || import.meta.env.VITE_RESTCOUNTRIES_API
 
-// 비동기 데이터 초기 로드
+// 비동기 데이터 초기 로드 / 새로고침
 const loadWeatherData = async () => {
   isLoading.value = true
   try {
@@ -35,6 +39,11 @@ const loadWeatherData = async () => {
     dataSource.value = weatherResult.source
 
     countryFlags.value = await fetchCountryFlagsApi(RESTCOUNTRIES_API_KEY)
+    lastUpdated.value = new Date().toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
   } finally {
     isLoading.value = false
   }
@@ -96,11 +105,12 @@ const enrichedCityList = computed(() => {
   })
 })
 
-// 검색어 및 날씨 필터 적용 목록
+// 검색어 + 날씨 필터 + 정렬 적용 목록
 const filteredCityList = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
-  return enrichedCityList.value.filter((city) => {
+  // 1. 필터링
+  const filtered = enrichedCityList.value.filter((city) => {
     const matchesQuery =
       !query ||
       city.name.toLowerCase().includes(query) ||
@@ -109,6 +119,20 @@ const filteredCityList = computed(() => {
 
     return matchesQuery && matchesStatus
   })
+
+  // 2. 정렬
+  switch (sortBy.value) {
+    case 'score-desc':
+      return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    case 'temp-desc':
+      return [...filtered].sort((a, b) => b.temp - a.temp)
+    case 'temp-asc':
+      return [...filtered].sort((a, b) => a.temp - b.temp)
+    case 'name-asc':
+      return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    default:
+      return filtered
+  }
 })
 
 // 통계 데이터
@@ -133,12 +157,12 @@ watch(selectedCityInfo, (newVal, oldVal) => {
 
 watchEffect(() => {
   console.log(
-    `[검색/필터] '${searchQuery.value}' | '${selectedStatus.value}' (결과: ${filteredCityList.value.length}개)`,
+    `[검색/필터] '${searchQuery.value}' | '${selectedStatus.value}' | '${sortBy.value}' (결과: ${filteredCityList.value.length}개)`,
   )
 })
 
 const handleSelectCity = (city) => {
-  selectedCityInfo.value = `${city.name}(${city.country}) 선택됨 - 추천 점수 ${city.score}점`
+  selectedCityInfo.value = `✈️ ${city.name}(${city.country}) 선택됨 - 기온 ${city.temp}°C, 추천 점수 ${city.score}점 (${city.badge?.grade})`
 }
 
 const showDetail = (city) => {
@@ -148,38 +172,92 @@ const showDetail = (city) => {
       `여행 추천 점수: ${city.score}점 (${city.badge.grade})`,
   )
 }
+
+// 🎲 랜덤 여행지 추천
+const handleRandomDestination = () => {
+  if (filteredCityList.value.length === 0) return
+  const list = filteredCityList.value
+  const randomPick = list[Math.floor(Math.random() * list.length)]
+  if (randomPick) {
+    handleSelectCity(randomPick)
+  }
+}
+
+// 📍 내 위치 날씨 탐색
+const handleMyLocation = async () => {
+  isLoadingLocation.value = true
+  try {
+    const loc = await getCurrentUserLocation()
+    const weatherResult = await fetchLiveCityWeather([loc])
+    if (weatherResult.success && weatherResult.data.length > 0) {
+      const enrichedLoc = weatherResult.data[0]
+      cityWeatherList.value = [
+        enrichedLoc,
+        ...cityWeatherList.value.filter((c) => c.id !== 'my_location'),
+      ]
+      const selected = enrichedCityList.value.find((c) => c.id === 'my_location')
+      if (selected) {
+        handleSelectCity(selected)
+      }
+    }
+  } catch (err) {
+    alert(err.message || '현재 위치를 가져오지 못했습니다. 위치 권한을 확인해주세요.')
+  } finally {
+    isLoadingLocation.value = false
+  }
+}
 </script>
 
 <template>
   <div class="travel-dashboard">
     <header class="hero-section">
-      <div class="hero-title-row">
-        <h2>🌍 세계 주요 도시 날씨 & 여행지 추천</h2>
-        <span v-if="dataSource === 'live'" class="status-chip live">🟢 실시간 날씨 연동 (Open-Meteo)</span>
-        <span v-else-if="dataSource === 'fallback'" class="status-chip fallback">🟡 로컬 데이터 모드</span>
-      </div>
       <p class="desc">실시간 날씨 기반 여행지 점수 및 국가별 기상 가이드</p>
+      <div class="hero-title-row">
+        <h2>🌍 세계 주요 여행지 날씨</h2>
+      </div>
+      <span v-if="dataSource === 'live'" class="status-chip live">🟢 open-meteo실시간 연동</span>
+      <span v-else-if="dataSource === 'fallback'" class="status-chip fallback">🟡 비연동 모드</span>
+
+      <!-- 동기화 시각 및 아이콘 새로고침 버튼 -->
+      <div class="sync-actions">
+        <span v-if="lastUpdated" class="last-sync-text">동기화: {{ lastUpdated }}</span>
+        <button
+          type="button"
+          class="btn-refresh-icon"
+          :disabled="isLoading"
+          @click="loadWeatherData"
+          title="날씨 데이터 새로고침"
+          aria-label="날씨 데이터 새로고침"
+        >
+          <span class="refresh-icon" :class="{ spinning: isLoading }">🔄</span>
+        </button>
+      </div>
     </header>
 
-    <!-- 검색 및 필터 (TravelSearchBar 컴포넌트) -->
+    <!-- 검색, 정렬 및 필터 (TravelSearchBar 컴포넌트) -->
     <TravelSearchBar
       :search-query="searchQuery"
       :status-options="statusOptions"
       :selected-status="selectedStatus"
+      :sort-by="sortBy"
+      :is-loading-location="isLoadingLocation"
       @update-query="(val) => (searchQuery = val)"
       @update-status="(val) => (selectedStatus = val)"
+      @update-sort="(val) => (sortBy = val)"
+      @random-pick="handleRandomDestination"
+      @my-location="handleMyLocation"
     />
 
     <!-- 통계 요약 (TravelSummary 컴포넌트) -->
     <TravelSummary :stats="stats" />
 
     <!-- 로딩 상태 표시 -->
-    <div v-if="isLoading" class="loading-state">
+    <div v-if="isLoading && cityWeatherList.length === 0" class="loading-state">
       <div class="spinner"></div>
       <p>실시간 날씨 데이터를 동기화하는 중입니다...</p>
     </div>
 
-    <!-- 여행지 도시 카드 리스트 (TravelCard 컴포넌트 분리) -->
+    <!-- 여행지 도시 카드 리스트 (TravelCard 컴포넌트) -->
     <section v-else class="city-grid">
       <TravelCard
         v-for="city in filteredCityList"
@@ -221,6 +299,56 @@ const showDetail = (city) => {
   gap: 0.75rem;
   flex-wrap: wrap;
   margin-bottom: 0.3rem;
+}
+
+.sync-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* background: var(--color-background-soft, #f8f9fa); */
+  /* border: 1px solid var(--color-border); */
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+}
+
+.last-sync-text {
+  font-size: 0.76rem;
+  color: var(--color-text);
+  opacity: 0.75;
+}
+
+.btn-refresh-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-icon:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.btn-refresh-icon:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.refresh-icon {
+  display: inline-block;
+  font-size: 0.82rem;
+  line-height: 1;
+  transform-origin: center;
+}
+
+.refresh-icon.spinning {
+  animation: spin 0.8s linear infinite;
 }
 
 .hero-section h2 {
