@@ -358,9 +358,10 @@ onMounted(async () => {
 
       <!-- 사이드바 내부 스크롤 컨테이너 -->
       <div class="sidebar-scroll-content">
-        <!-- 1) 사이드바 헤더: 타이틀 및 단위/설정 제어 -->
-        <div class="sidebar-header-card">
-          <div class="header-top-row">
+        <!-- 1) [상단] 현재 탐험 중인 도시 HUD 카드 & 글로벌 툴 -->
+        <div v-if="activeDestination" class="active-hud-card">
+          <!-- 상단 브랜드 & 툴바 -->
+          <div class="hud-top-bar">
             <div class="brand-group">
               <span class="brand-emoji">🌍</span>
               <h1 class="brand-title">세계 여행 날씨</h1>
@@ -391,6 +392,85 @@ onMounted(async () => {
             </div>
           </div>
 
+          <!-- 활성 도시 기본 정보 & 쾌적도 -->
+          <div class="hud-top">
+            <div class="hud-dest-titles">
+              <div class="hud-country-tag">
+                <img
+                  v-if="activeDestination.flagUrl"
+                  :src="activeDestination.flagUrl"
+                  alt="flag"
+                  class="mini-flag-img"
+                />
+                <span>{{ activeDestination.country }}</span>
+              </div>
+              <h2 class="hud-dest-name">
+                {{ activeDestination.name }}
+                <span class="hud-eng">{{ activeDestination.engName }}</span>
+              </h2>
+            </div>
+
+            <!-- 여행 쾌적 지수 뱃지 -->
+            <div class="hud-score-badge" :class="activeDestination.travelScoreClass">
+              <span class="score-num">{{ activeDestination.travelScore }}</span>
+              <span class="score-label">{{ activeDestination.travelGrade }}</span>
+            </div>
+          </div>
+
+          <!-- 기온 & 체감온도 & 상태 -->
+          <div class="hud-weather-row">
+            <div class="hud-temp-block">
+              <span class="hud-weather-icon">{{ activeDestination.icon }}</span>
+              <div class="hud-temp-texts">
+                <span class="hud-current-temp">{{
+                  configStore.formatTemp(activeDestination.temp)
+                }}</span>
+                <span class="hud-feels-temp">
+                  체감 {{ configStore.formatTemp(activeDestination.apparentTemp) }} ·
+                  {{ activeDestination.status }}
+                </span>
+              </div>
+            </div>
+
+            <div class="hud-mini-metrics">
+              <div class="hud-m-item" title="습도">
+                <span class="m-ico">💧</span>
+                <span class="m-val">{{ activeDestination.humidity }}%</span>
+              </div>
+              <div class="hud-m-item" title="풍속">
+                <span class="m-ico">💨</span>
+                <span class="m-val">{{ activeDestination.windSpeed }}km/h</span>
+              </div>
+              <div class="hud-m-item" title="강수량">
+                <span class="m-ico">🌧️</span>
+                <span class="m-val">{{ activeDestination.precipitation }}mm</span>
+              </div>
+              <div class="hud-m-item" title="기압">
+                <span class="m-ico">🧭</span>
+                <span class="m-val">{{ activeDestination.pressure }}hPa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 팁 코멘트 & 상세 모달 버튼 -->
+          <div class="hud-footer-row">
+            <div class="hud-advice-strip" v-if="activeDestination.travelVerdict">
+              <span class="advice-ico">💡</span>
+              <span class="advice-txt">{{ activeDestination.travelVerdict }}</span>
+            </div>
+
+            <button
+              type="button"
+              class="btn-open-forecast"
+              @click="detailCity = activeDestination"
+            >
+              ⏱️ 7일간 상세 예보 보기 ❯
+            </button>
+          </div>
+        </div>
+
+        <!-- 2) [중단] 도시 검색 및 필터 제어 카드 (도시 목록 바로 위) -->
+        <div class="sidebar-header-card">
           <!-- 실시간 검색창 -->
           <div class="sidebar-search-box">
             <span class="search-ico">🔍</span>
@@ -470,94 +550,11 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 2) 현재 선택된 여행지 HUD 카드 -->
-        <div v-if="activeDestination" class="active-hud-card">
-          <div class="hud-top">
-            <div class="hud-dest-titles">
-              <div class="hud-country-tag">
-                <img
-                  v-if="activeDestination.flagUrl"
-                  :src="activeDestination.flagUrl"
-                  alt="flag"
-                  class="mini-flag-img"
-                />
-                <span>{{ activeDestination.country }}</span>
-              </div>
-              <h2 class="hud-dest-name">
-                {{ activeDestination.name }}
-                <span class="hud-eng">{{ activeDestination.engName }}</span>
-              </h2>
-            </div>
-
-            <!-- 여행 쾌적 지수 뱃지 -->
-            <div class="hud-score-badge" :class="activeDestination.travelScoreClass">
-              <span class="score-num">{{ activeDestination.travelScore }}</span>
-              <span class="score-label">{{ activeDestination.travelGrade }}</span>
-            </div>
-          </div>
-
-          <!-- 기온 & 체감온도 & 상태 -->
-          <div class="hud-weather-row">
-            <div class="hud-temp-block">
-              <span class="hud-weather-icon">{{ activeDestination.icon }}</span>
-              <div class="hud-temp-texts">
-                <span class="hud-current-temp">{{
-                  configStore.formatTemp(activeDestination.temp)
-                }}</span>
-                <span class="hud-feels-temp">
-                  체감 {{ configStore.formatTemp(activeDestination.apparentTemp) }} ·
-                  {{ activeDestination.status }}
-                </span>
-              </div>
-            </div>
-
-            <div class="hud-mini-metrics">
-              <div class="hud-m-item" title="습도">
-                <span class="m-ico">💧</span>
-                <span class="m-val">{{ activeDestination.humidity }}%</span>
-              </div>
-              <div class="hud-m-item" title="풍속">
-                <span class="m-ico">💨</span>
-                <span class="m-val">{{ activeDestination.windSpeed }}km/h</span>
-              </div>
-              <div class="hud-m-item" title="강수량">
-                <span class="m-ico">🌧️</span>
-                <span class="m-val">{{ activeDestination.precipitation }}mm</span>
-              </div>
-              <div class="hud-m-item" title="기압">
-                <span class="m-ico">🧭</span>
-                <span class="m-val">{{ activeDestination.pressure }}hPa</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 팁 코멘트 & 상세 모달 버튼 -->
-          <div class="hud-footer-row">
-            <div class="hud-advice-strip" v-if="activeDestination.travelVerdict">
-              <span class="advice-ico">💡</span>
-              <span class="advice-txt">{{ activeDestination.travelVerdict }}</span>
-            </div>
-
-            <button
-              type="button"
-              class="btn-open-forecast"
-              @click="detailCity = activeDestination"
-            >
-              ⏱️ 7일간 상세 예보 보기 ❯
-            </button>
-          </div>
-        </div>
-
-        <!-- 3) 통계 요약 바 -->
-        <div class="sidebar-stats-row">
-          <WeatherStatsSummary
-            :weather-list="filteredWorldList"
-            :selected-city-info="`총 ${filteredWorldList.length}개 도시 모니터링 중`"
-          />
-        </div>
-
-        <!-- 4) 도시 카드 리스트 -->
+        <!-- 3) [본문] 통계 요약 & 도시 카드 리스트 (검색창 바로 밑에 연결) -->
         <div class="sidebar-cards-section">
+          <!-- 4종 컴팩트 통계 그리드 -->
+          <WeatherStatsSummary :weather-list="filteredWorldList" />
+
           <div class="section-badge-row">
             <span class="list-heading">🌍 세계 주요 도시 목록 ({{ filteredWorldList.length }})</span>
             <span class="list-tip">클릭 시 지도 이동</span>
@@ -622,7 +619,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 5) 하단 아카이브 링크 포털 -->
+        <!-- 4) [하단] 아카이브 링크 포털 -->
         <div class="sidebar-portal-footer">
           <div class="portal-link-group">
             <RouterLink to="/practice" class="portal-sub-link">
@@ -1167,7 +1164,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-/* 2) 활성 여행지 HUD 카드 */
+/* 1) 활성 여행지 HUD 카드 */
 .active-hud-card {
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(14px);
@@ -1179,6 +1176,15 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.75rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.hud-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .hud-top {

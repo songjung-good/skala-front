@@ -7,10 +7,6 @@ const props = defineProps({
     type: Array,
     required: true,
   },
-  selectedCityInfo: {
-    type: String,
-    default: '카드를 클릭하거나 도시를 검색해 보세요.',
-  },
 })
 
 const configStore = useConfigStore()
@@ -32,15 +28,11 @@ const coldestCity = computed(() => {
   if (props.weatherList.length === 0) return null
   return [...props.weatherList].sort((a, b) => a.temp - b.temp)[0]
 })
-
-const rainyCities = computed(() => {
-  return props.weatherList.filter((c) => c.category === '비' || c.precipitation > 0)
-})
 </script>
 
 <template>
   <div class="stats-container">
-    <!-- 실시간 요약 통계 그리드 -->
+    <!-- 실시간 요약 통계 그리드 (4종 컴팩트 카드) -->
     <div class="stats-grid">
       <div class="stat-card">
         <span class="stat-label">🏙️ 표시 중인 도시</span>
@@ -67,21 +59,6 @@ const rainyCities = computed(() => {
           <strong>{{ coldestCity.name }}</strong> ({{ configStore.formatTemp(coldestCity.temp) }})
         </span>
       </div>
-    </div>
-
-    <!-- 비/눈 소식 알림 바 (조건부 렌더링) -->
-    <div v-if="rainyCities.length > 0" class="rain-alert">
-      <span class="alert-icon">🌧️</span>
-      <span class="alert-text">
-        <strong>강수 관측:</strong>
-        {{ rainyCities.map((c) => c.name).join(', ') }}
-      </span>
-    </div>
-
-    <!-- 하단 상태 바 -->
-    <div class="status-bar">
-      <span class="status-icon">💬</span>
-      <span class="status-text">{{ selectedCityInfo }}</span>
     </div>
   </div>
 </template>
@@ -135,34 +112,5 @@ const rainyCities = computed(() => {
 
 .stat-value.cold strong {
   color: #60a5fa;
-}
-
-.rain-alert {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 8px;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.76rem;
-  color: #e0f2fe;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.status-bar {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 8px;
-  padding: 0.5rem 0.8rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #86efac;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 </style>
