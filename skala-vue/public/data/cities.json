@@ -2,91 +2,217 @@
   {
     "id": "city_01",
     "name": "서울",
+    "engName": "Seoul",
     "country": "대한민국",
     "continent": "아시아",
     "lat": 37.5665,
     "lon": 126.9780,
     "temp": 23,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "남산타워 & 한강"
   },
   {
     "id": "city_02",
     "name": "도쿄",
+    "engName": "Tokyo",
     "country": "일본",
     "continent": "아시아",
     "lat": 35.6762,
     "lon": 139.6503,
     "temp": 21,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "도심 & 미식 탐방"
   },
   {
     "id": "city_03",
     "name": "파리",
+    "engName": "Paris",
     "country": "프랑스",
     "continent": "유럽",
     "lat": 48.8566,
     "lon": 2.3522,
     "temp": 20,
-    "status": "구름"
+    "status": "구름",
+    "tag": "에펠탑 & 루브르"
   },
   {
     "id": "city_04",
     "name": "런던",
+    "engName": "London",
     "country": "영국",
     "continent": "유럽",
     "lat": 51.5074,
     "lon": -0.1278,
     "temp": 15,
-    "status": "비"
+    "status": "비",
+    "tag": "빅벤 & 타워브릿지"
   },
   {
     "id": "city_05",
     "name": "뉴욕",
+    "engName": "New York",
     "country": "미국",
     "continent": "아메리카",
     "lat": 40.7128,
     "lon": -74.0060,
     "temp": 25,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "타임스퀘어 & 센트럴파크"
   },
   {
     "id": "city_06",
     "name": "방콕",
+    "engName": "Bangkok",
     "country": "태국",
     "continent": "아시아",
     "lat": 13.7563,
     "lon": 100.5018,
     "temp": 34,
-    "status": "비"
+    "status": "비",
+    "tag": "카오산로드 & 야시장"
   },
   {
     "id": "city_07",
     "name": "시드니",
+    "engName": "Sydney",
     "country": "호주",
     "continent": "오세아니아",
     "lat": -33.8688,
     "lon": 151.2093,
     "temp": 18,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "오페라하우스 & 본다이비치"
   },
   {
     "id": "city_08",
     "name": "카이로",
+    "engName": "Cairo",
     "country": "이집트",
     "continent": "아프리카",
     "lat": 30.0444,
     "lon": 31.2357,
     "temp": 36,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "피라미드 & 나일강"
   },
   {
     "id": "city_09",
     "name": "로마",
+    "engName": "Rome",
     "country": "이탈리아",
     "continent": "유럽",
     "lat": 41.9028,
     "lon": 12.4964,
     "temp": 26,
-    "status": "맑음"
+    "status": "맑음",
+    "tag": "콜로세움 & 바티칸"
+  },
+  {
+    "id": "city_10",
+    "name": "발리",
+    "engName": "Bali",
+    "country": "인도네시아",
+    "continent": "아시아",
+    "lat": -8.4095,
+    "lon": 115.1889,
+    "temp": 29,
+    "status": "구름",
+    "tag": "서핑 & 우붓 힐링"
+  },
+  {
+    "id": "city_11",
+    "name": "다낭",
+    "engName": "Danang",
+    "country": "베트남",
+    "continent": "아시아",
+    "lat": 16.0544,
+    "lon": 108.2022,
+    "temp": 30,
+    "status": "맑음",
+    "tag": "미케비치 & 바나힐"
+  },
+  {
+    "id": "city_12",
+    "name": "싱가포르",
+    "engName": "Singapore",
+    "country": "싱가포르",
+    "continent": "아시아",
+    "lat": 1.3521,
+    "lon": 103.8198,
+    "temp": 31,
+    "status": "비",
+    "tag": "마리나베이 & 가든스"
+  },
+  {
+    "id": "city_13",
+    "name": "타이베이",
+    "engName": "Taipei",
+    "country": "대만",
+    "continent": "아시아",
+    "lat": 25.0330,
+    "lon": 121.5654,
+    "temp": 27,
+    "status": "구름",
+    "tag": "야시장 & 지우펀"
+  },
+  {
+    "id": "city_14",
+    "name": "바르셀로나",
+    "engName": "Barcelona",
+    "country": "스페인",
+    "continent": "유럽",
+    "lat": 41.3879,
+    "lon": 2.1699,
+    "temp": 24,
+    "status": "맑음",
+    "tag": "사그라다 파밀리아"
+  },
+  {
+    "id": "city_15",
+    "name": "인터라켄",
+    "engName": "Interlaken",
+    "country": "스위스",
+    "continent": "유럽",
+    "lat": 46.6863,
+    "lon": 7.8632,
+    "temp": 14,
+    "status": "눈",
+    "tag": "융프라우 & 알프스"
+  },
+  {
+    "id": "city_16",
+    "name": "레이캬비크",
+    "engName": "Reykjavik",
+    "country": "아이슬란드",
+    "continent": "유럽",
+    "lat": 64.1466,
+    "lon": -21.9426,
+    "temp": 6,
+    "status": "눈",
+    "tag": "오로라 & 블루라군"
+  },
+  {
+    "id": "city_17",
+    "name": "제주",
+    "engName": "Jeju",
+    "country": "대한민국",
+    "continent": "아시아",
+    "lat": 33.4996,
+    "lon": 126.5312,
+    "temp": 22,
+    "status": "맑음",
+    "tag": "에메랄드 바다 & 한라산"
+  },
+  {
+    "id": "city_18",
+    "name": "오사카",
+    "engName": "Osaka",
+    "country": "일본",
+    "continent": "아시아",
+    "lat": 34.6937,
+    "lon": 135.5023,
+    "temp": 22,
+    "status": "맑음",
+    "tag": "도톤보리 & 유니버설"
   }
 ]

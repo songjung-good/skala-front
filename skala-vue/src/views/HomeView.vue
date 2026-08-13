@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useConfigStore } from '@/stores/configStore'
 import {
-  WORLD_DESTINATIONS,
   fetchLiveWeatherData,
   getCurrentUserLocation,
   fetchBaseCities,
@@ -32,10 +31,8 @@ const lastUpdated = ref('')
 // 사이드바 열림/닫힘 상태
 const isSidebarOpen = ref(true)
 
-// 현재 활성 여행지 (지도 중심 및 HUD 기준)
-const activeDestination = ref(
-  WORLD_DESTINATIONS[Math.floor(Math.random() * WORLD_DESTINATIONS.length)],
-)
+// 현재 활성 여행지 (지도 중심 및 HUD 기준, cities.json 로드 후 첫 도시 바인딩)
+const activeDestination = ref(null)
 
 // Windy 레이더 레이어 상태
 const selectedLayer = ref('wind') // wind, rain, temp, clouds, waves
@@ -157,6 +154,22 @@ const filteredWorldList = computed(() => {
   }
 })
 
+// 목록 접기/더보기 상태 (기본 6개 노출)
+const isListExpanded = ref(false)
+const displayLimit = 6
+
+const displayedWorldList = computed(() => {
+  if (
+    searchQuery.value.trim() ||
+    selectedContinent.value !== '전체' ||
+    selectedCategory.value !== '전체' ||
+    isListExpanded.value
+  ) {
+    return filteredWorldList.value
+  }
+  return filteredWorldList.value.slice(0, displayLimit)
+})
+
 // ==========================================
 // 5. 검색어 지오코딩 자동완성 Watcher
 // ==========================================
@@ -236,10 +249,12 @@ const handleMyLocation = async () => {
   }
 }
 
-onMounted(() => {
-  const randomInit = WORLD_DESTINATIONS[Math.floor(Math.random() * WORLD_DESTINATIONS.length)]
-  activeDestination.value = randomInit
-  loadWeatherData()
+onMounted(async () => {
+  await loadWeatherData()
+  if (!activeDestination.value && worldWeatherList.value.length > 0) {
+    activeDestination.value =
+      worldWeatherList.value[Math.floor(Math.random() * worldWeatherList.value.length)]
+  }
 })
 </script>
 
@@ -586,14 +601,24 @@ onMounted(() => {
           <!-- 카드 리스트 -->
           <div v-else class="sidebar-cards-list">
             <WeatherLiveCard
-              v-for="city in filteredWorldList"
+              v-for="city in displayedWorldList"
               :key="city.id"
               :city-item="city"
-              :is-selected="activeDestination?.id === city.id"
+              :is-selected="activeDestination?.name === city.name"
               @select-city="handleSelectDestination"
               @view-detail="(dest) => (detailCity = dest)"
               @view-windy-map="handleSelectDestination"
             />
+
+            <!-- 일부 노출 시 더보기 버튼 -->
+            <button
+              v-if="filteredWorldList.length > displayLimit && !searchQuery.trim() && selectedContinent === '전체' && selectedCategory === '전체'"
+              type="button"
+              class="btn-expand-list"
+              @click="isListExpanded = !isListExpanded"
+            >
+              <span>{{ isListExpanded ? '▲ 주요 도시 접기' : `▼ 전체 도시 더보기 (+${filteredWorldList.length - displayLimit}개)` }}</span>
+            </button>
           </div>
         </div>
 
@@ -1370,6 +1395,27 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.btn-expand-list {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-expand-list:hover {
+  background: rgba(0, 189, 126, 0.35);
+  border-color: hsla(160, 100%, 45%, 1);
+  color: #fff;
 }
 
 .sidebar-loading-box,
