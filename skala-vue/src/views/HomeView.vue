@@ -221,7 +221,9 @@ watch(searchQuery, (newVal) => {
 // ==========================================
 const handleSelectDestination = async (dest) => {
   showSearchDropdown.value = false
-  const existing = worldWeatherList.value.find((c) => c.id === dest.id)
+  const existing = worldWeatherList.value.find(
+    (c) => c.id === dest.id || (c.name && c.name === dest.name),
+  )
   if (existing) {
     activeDestination.value = existing
   } else {
