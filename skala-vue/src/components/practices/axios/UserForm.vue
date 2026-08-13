@@ -60,7 +60,7 @@ const confirmDelete = () => {
 
 <template>
   <div class="practice-section">
-    <h2>🧩 Element Plus 컴포넌트 & 피드백 실습</h2>
+    <h2>🧩 Element Plus 컴포넌트</h2>
 
     <!-- 1. 회원가입 폼 -->
     <div class="demo-card">
@@ -69,7 +69,7 @@ const confirmDelete = () => {
         <el-input
           v-model="userForm.email"
           placeholder="이메일을 입력하세요 (예: user@test.com)"
-          style="max-width: 320px;"
+          style="max-width: 320px"
           clearable
         />
         <el-checkbox v-model="userForm.agree">이용약관 동의</el-checkbox>
@@ -96,12 +96,15 @@ const confirmDelete = () => {
     <div class="demo-card">
       <h3>3. 다운로드 진행률 (Progress)</h3>
       <div class="progress-box">
-        <el-progress :percentage="downloadProgress" :status="downloadProgress === 100 ? 'success' : ''" />
+        <el-progress
+          :percentage="downloadProgress"
+          :status="downloadProgress === 100 ? 'success' : ''"
+        />
         <el-button
           type="success"
           :disabled="isDownloading"
           @click="startDownload"
-          style="margin-top: 0.5rem;"
+          style="margin-top: 0.5rem"
         >
           {{ isDownloading ? '다운로드 중...' : '다운로드 시작' }}
         </el-button>
