@@ -1238,6 +1238,12 @@ export const countryMapping = {
   베트남: { en: 'Vietnam', code: 'vn' },
   싱가포르: { en: 'Singapore', code: 'sg' },
   대만: { en: 'Taiwan', code: 'tw' },
+  인도네시아: { en: 'Indonesia', code: 'id' },
+  아이슬란드: { en: 'Iceland', code: 'is' },
+  독일: { en: 'Germany', code: 'de' },
+  캐나다: { en: 'Canada', code: 'ca' },
+  브라질: { en: 'Brazil', code: 'br' },
+  멕시코: { en: 'Mexico', code: 'mx' },
 }
 
 export const defaultCountryFlags = {
@@ -1245,6 +1251,20 @@ export const defaultCountryFlags = {
   일본: 'https://flags.restcountries.com/v5/w640/jp.png',
   프랑스: 'https://flags.restcountries.com/v5/w640/fr.png',
   미국: 'https://flags.restcountries.com/v5/w640/us.png',
+  영국: 'https://flags.restcountries.com/v5/w640/gb.png',
+  태국: 'https://flags.restcountries.com/v5/w640/th.png',
+  호주: 'https://flags.restcountries.com/v5/w640/au.png',
+  이집트: 'https://flags.restcountries.com/v5/w640/eg.png',
+  이탈리아: 'https://flags.restcountries.com/v5/w640/it.png',
+  스페인: 'https://flags.restcountries.com/v5/w640/es.png',
+  스위스: 'https://flags.restcountries.com/v5/w640/ch.png',
+  베트남: 'https://flags.restcountries.com/v5/w640/vn.png',
+  싱가포르: 'https://flags.restcountries.com/v5/w640/sg.png',
+  대만: 'https://flags.restcountries.com/v5/w640/tw.png',
+  인도네시아: 'https://flags.restcountries.com/v5/w640/id.png',
+  아이슬란드: 'https://flags.restcountries.com/v5/w640/is.png',
+  독일: 'https://flags.restcountries.com/v5/w640/de.png',
+  캐나다: 'https://flags.restcountries.com/v5/w640/ca.png',
 }
 
 // 1. cities.json 동적 로드 (없으면 WORLD_DESTINATIONS 사용)
@@ -1258,30 +1278,37 @@ export const fetchBaseCities = async () => {
   return WORLD_DESTINATIONS
 }
 
-// 2. RestCountries 국기 API 조회
+// 2. RestCountries 국기 API 조회 (Authorization 헤더 지원)
 export const fetchCountryFlagsApi = async (apiKey) => {
+  const token = apiKey || 'rc_live_661b276fdab1414bb557dff5e770a05c'
   const flags = { ...defaultCountryFlags }
-  if (!apiKey) return flags
   try {
     const res = await fetch(
-      'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100',
+      'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=250&pretty=1',
       {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${token}` },
       },
     )
-    if (!res.ok) throw new Error('API Fail')
+    if (!res.ok) throw new Error(`API Fail (${res.status})`)
     const json = await res.json()
     const objects = json?.data?.objects || []
     const dict = {}
     objects.forEach((item) => {
-      if (item?.names?.common && item?.flag?.url_png)
+      if (item?.names?.common && item?.flag?.url_png) {
         dict[item.names.common.toLowerCase()] = item.flag.url_png
+      }
     })
+
     Object.entries(countryMapping).forEach(([kr, meta]) => {
-      if (dict[meta.en.toLowerCase()]) flags[kr] = dict[meta.en.toLowerCase()]
+      const match = dict[meta.en.toLowerCase()]
+      if (match) {
+        flags[kr] = match
+      } else if (meta.code) {
+        flags[kr] = `https://flags.restcountries.com/v5/w640/${meta.code}.png`
+      }
     })
   } catch (e) {
-    console.warn('국기 API fallback 유지:', e)
+    console.warn('국기 API fetch fallback 사용:', e)
   }
   return flags
 }

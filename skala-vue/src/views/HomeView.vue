@@ -351,15 +351,16 @@ onMounted(() => {
             </div>
 
             <div class="header-tools">
-              <!-- 단위 토글 -->
+              <!-- 단위 토글 (선택: 초록색 / 미선택: 흰색) -->
               <button
                 type="button"
                 class="tool-btn unit-toggle-btn"
                 @click="configStore.toggleUnit"
-                :title="`현재 단위: ${configStore.unit === 'celsius' ? '섭씨(℃)' : '화씨(℉)'}`"
+                :title="`기온 단위 변경 (현재: ${configStore.unit === 'celsius' ? '섭씨 ℃' : '화씨 ℉'})`"
               >
-                <span class="unit-sym">{{ configStore.unitSymbol }}</span>
-                <span>{{ configStore.unit === 'celsius' ? '℃' : '℉' }}</span>
+                <span class="unit-opt" :class="{ active: configStore.unit === 'celsius' }">℃</span>
+                <span class="unit-divider">/</span>
+                <span class="unit-opt" :class="{ active: configStore.unit === 'fahrenheit' }">℉</span>
               </button>
 
               <!-- Windy 설정 모달 버튼 -->
@@ -956,9 +957,33 @@ onMounted(() => {
   color: #fff;
 }
 
-.unit-toggle-btn .unit-sym {
+.unit-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0.25rem 0.55rem;
+  user-select: none;
+}
+
+.unit-opt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 0.65;
+  transition: all 0.2s ease;
+}
+
+.unit-opt.active {
   color: #2ecc71;
   font-weight: 800;
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(46, 204, 113, 0.5);
+}
+
+.unit-divider {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
 }
 
 /* 검색창 */
