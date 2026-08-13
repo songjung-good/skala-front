@@ -2,6 +2,14 @@
 
 ---
 
+## 프로젝트 주소
+
+> ### github: <https://github.com/songjung-good/skala-front>
+
+> ### vercel배포: <http://skala-front-pi.vercel.app/>
+
+ 
+
 ## 🛠️ 프로젝트 실행 및 빌드
 
 ```bash
