@@ -1278,42 +1278,49 @@ export const fetchBaseCities = async () => {
   return WORLD_DESTINATIONS
 }
 
-// 2. RestCountries 국기 API 조회 (.env 환경변수 활용)
+// 2. RestCountries 국기 API 조회 (무료 플랜 limit=100 및 CDN 자동 Fallback)
 export const fetchCountryFlagsApi = async (apiKey) => {
   const token =
     apiKey ||
-    import.meta.env.REST_COUNTRIES_API_KEY ||
     import.meta.env.VITE_RESTCOUNTRIES_API ||
+    import.meta.env.REST_COUNTRIES_API_KEY ||
     ''
   const flags = { ...defaultCountryFlags }
-  if (!token) return flags
-  try {
-    const res = await fetch(
-      'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100&pretty=1',
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    )
-    if (!res.ok) throw new Error(`API Fail (${res.status})`)
-    const json = await res.json()
-    const objects = json?.data?.objects || []
-    const dict = {}
-    objects.forEach((item) => {
-      if (item?.names?.common && item?.flag?.url_png) {
-        dict[item.names.common.toLowerCase()] = item.flag.url_png
-      }
-    })
 
-    Object.entries(countryMapping).forEach(([kr, meta]) => {
-      const match = dict[meta.en.toLowerCase()]
-      if (match) {
-        flags[kr] = match
-      } else if (meta.code) {
-        flags[kr] = `https://flags.restcountries.com/v5/w640/${meta.code}.png`
+  // 1. 모든 매핑 국가에 대해 국기 CDN URL 사전 등록 (API 장애나 403 시에도 100% 무중단 렌더링)
+  Object.entries(countryMapping).forEach(([kr, meta]) => {
+    if (meta.code && !flags[kr]) {
+      flags[kr] = `https://flags.restcountries.com/v5/w640/${meta.code}.png`
+    }
+  })
+
+  // 2. 유효한 토큰이 제공된 경우에만 RestCountries v5 API 동기화 시도
+  if (token && typeof token === 'string' && token.trim() !== '') {
+    try {
+      const res = await fetch(
+        'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100',
+        {
+          headers: { Authorization: `Bearer ${token.trim()}` },
+        },
+      )
+      if (res.ok) {
+        const json = await res.json()
+        const objects = json?.data?.objects || []
+        const dict = {}
+        objects.forEach((item) => {
+          if (item?.names?.common && item?.flag?.url_png) {
+            dict[item.names.common.toLowerCase()] = item.flag.url_png
+          }
+        })
+        Object.entries(countryMapping).forEach(([kr, meta]) => {
+          const match = dict[meta.en.toLowerCase()]
+          if (match) flags[kr] = match
+        })
       }
-    })
-  } catch (e) {
-    console.warn('국기 API fetch fallback 사용:', e)
+    } catch {
+      // API 실패 시 사전 등록된 CDN 국기 URL 자동 유지
+    }
   }
+
   return flags
 }

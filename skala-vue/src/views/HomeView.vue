@@ -31,8 +31,28 @@ const lastUpdated = ref('')
 // 사이드바 열림/닫힘 상태
 const isSidebarOpen = ref(true)
 
-// 현재 활성 여행지 (지도 중심 및 HUD 기준, cities.json 로드 후 첫 도시 바인딩)
-const activeDestination = ref(null)
+// 현재 활성 여행지 (지도 중심 및 HUD 기준 기본값 세팅)
+const activeDestination = ref({
+  id: 'city_01',
+  name: '서울',
+  engName: 'Seoul',
+  country: '대한민국',
+  temp: 23,
+  apparentTemp: 22,
+  status: '맑음',
+  icon: '☀️',
+  humidity: 50,
+  windSpeed: 10,
+  precipitation: 0,
+  pressure: 1013,
+  travelScore: 92,
+  travelGrade: '최적',
+  travelScoreClass: 'score-best',
+  travelVerdict: '여행하기 완벽한 날씨입니다!',
+  flagUrl: 'https://flags.restcountries.com/v5/w640/kr.png',
+  lat: 37.5665,
+  lon: 126.978,
+})
 
 // Windy 레이더 레이어 상태
 const selectedLayer = ref('wind') // wind, rain, temp, clouds, waves
@@ -471,6 +491,12 @@ onMounted(async () => {
 
         <!-- 2) [중단] 도시 검색 및 필터 제어 카드 (도시 목록 바로 위) -->
         <div class="sidebar-header-card">
+          <!-- 검색 영역 타이틀 -->
+          <div class="search-section-header">
+            <span class="search-section-title">🔍 여행지 검색</span>
+            <span class="search-section-sub">도시명 또는 국가로 탐색</span>
+          </div>
+
           <!-- 실시간 검색창 -->
           <div class="sidebar-search-box">
             <span class="search-ico">🔍</span>
@@ -818,16 +844,16 @@ onMounted(async () => {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 440px;
+  width: 480px;
   height: 100%;
   z-index: 30;
-  background: rgba(15, 17, 23, 0.55);
+  background: rgba(15, 17, 23, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  box-shadow: -8px 0 36px rgba(0, 0, 0, 0.5);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -835,14 +861,15 @@ onMounted(async () => {
   transform: translateX(100%);
 }
 
-/* 사이드바 접기/펼치기 버튼 */
+/* 사이드바 접기/펼치기 버튼 (상하 중앙 배치) */
 .btn-sidebar-toggle {
   position: absolute;
-  left: -38px;
-  top: 1.25rem;
-  width: 38px;
-  height: 64px;
-  border-radius: 10px 0 0 10px;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 80px;
+  border-radius: 12px 0 0 12px;
   background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -854,15 +881,16 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.3);
-  transition: background 0.2s, color 0.2s;
+  gap: 3px;
+  box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.35);
+  transition: background 0.2s, color 0.2s, transform 0.2s ease;
   z-index: 40;
 }
 
 .btn-sidebar-toggle:hover {
-  background: rgba(0, 189, 126, 0.45);
+  background: rgba(0, 189, 126, 0.5);
   color: #fff;
+  transform: translateY(-50%) translateX(-2px);
 }
 
 .toggle-icon {
@@ -901,18 +929,36 @@ onMounted(async () => {
   background: hsla(160, 100%, 37%, 0.8);
 }
 
-/* 1) 사이드바 헤더 카드 */
+/* 2) 도시 검색 및 필터 제어 영역 (사이드바 일체형 구조, 하단 구분선 적용) */
 .sidebar-header-card {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 12px;
-  padding: 0.9rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0;
+  padding: 0.25rem 0.25rem 1.15rem 0.25rem;
+  box-shadow: none;
+}
+
+.search-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 0.1rem;
+}
+
+.search-section-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.search-section-sub {
+  font-size: 0.7rem;
+  color: #cbd5e1;
 }
 
 .header-top-row {
@@ -1164,18 +1210,17 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-/* 1) 활성 여행지 HUD 카드 */
+/* 1) 활성 여행지 HUD (사이드바 상단 일체형 헤더 구조, 하단 구분선 적용) */
 .active-hud-card {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(0, 189, 126, 0.6);
-  border-radius: 12px;
-  padding: 0.95rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0;
+  padding: 0.25rem 0.25rem 1.15rem 0.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  gap: 0.85rem;
+  box-shadow: none;
 }
 
 .hud-top-bar {
@@ -1183,8 +1228,8 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.15rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
 .hud-top {

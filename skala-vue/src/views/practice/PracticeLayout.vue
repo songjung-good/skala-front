@@ -10,6 +10,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/practice/day1" class="tab-item">1일차</RouterLink>
         <RouterLink to="/practice/day2" class="tab-item">2일차</RouterLink>
         <RouterLink to="/practice/day3" class="tab-item">3일차</RouterLink>
+        <RouterLink to="/practice/day4" class="tab-item">4일차</RouterLink>
       </div>
     </div>
     <div class="sub-body">

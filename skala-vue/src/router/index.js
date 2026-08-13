@@ -76,6 +76,11 @@ const router = createRouter({
           name: 'practice-day3',
           component: () => import('../views/practice/Day3PracticeView.vue'),
         },
+        {
+          path: 'day4',
+          name: 'practice-day4',
+          component: () => import('../views/practice/Day4PracticeView.vue'),
+        },
       ],
     },
     {
