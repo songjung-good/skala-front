@@ -272,8 +272,9 @@ onMounted(async () => {
         loading="lazy"
       ></iframe>
 
-      <!-- 지도 좌상단: 실시간 관측 현황 & 레이어 스위처 -->
+      <!-- 지도 좌상단: 통합 플로팅 툴바 (상태 태그 + 레이어 스위처 + 퀵 액션) -->
       <div class="map-floating-top">
+        <!-- 1) 실시간 레이더 상태 뱃지 -->
         <div class="radar-status-badge">
           <span class="live-dot"></span>
           <span class="radar-text">
@@ -283,6 +284,7 @@ onMounted(async () => {
           </span>
         </div>
 
+        <!-- 2) 기상 레이어 선택 버튼 (바람, 비, 기온, 구름, 파도) -->
         <div class="floating-layer-pills">
           <button
             v-for="ly in layers"
@@ -296,10 +298,8 @@ onMounted(async () => {
             {{ ly.label }}
           </button>
         </div>
-      </div>
 
-      <!-- 지도 좌하단: 새로고침 / 퀵 액션 / 동기화 시각 -->
-      <div class="map-floating-bottom">
+        <!-- 3) 퀵 액션 버튼 (새로고침, 랜덤, 내위치, 동기화) -->
         <div class="floating-quick-actions">
           <button
             type="button"
@@ -332,10 +332,10 @@ onMounted(async () => {
             <span class="action-icon">📍</span>
             <span class="action-text">{{ isLoadingLocation ? '위치 탐색중...' : '내 위치' }}</span>
           </button>
-        </div>
 
-        <div v-if="lastUpdated" class="floating-sync-badge">
-          <span>동기화: {{ lastUpdated }}</span>
+          <span v-if="lastUpdated" class="floating-sync-text">
+            {{ lastUpdated }} 동기화
+          </span>
         </div>
       </div>
     </div>
@@ -755,22 +755,11 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 189, 126, 0.4);
 }
 
-/* 지도 좌하단 플로팅 컨트롤 */
-.map-floating-bottom {
-  position: absolute;
-  bottom: 1.25rem;
-  left: 1rem;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  pointer-events: auto;
-}
-
 .floating-quick-actions {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
+  flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -778,15 +767,16 @@ onMounted(async () => {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  width: fit-content;
 }
 
 .btn-floating-action {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.8rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(0, 0, 0, 0.25);
@@ -815,16 +805,12 @@ onMounted(async () => {
   100% { transform: rotate(360deg); }
 }
 
-.floating-sync-badge {
-  font-size: 0.75rem;
+.floating-sync-text {
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 0.45rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #f1f2f6;
+  padding: 0 0.35rem;
+  white-space: nowrap;
 }
 
 /* ========================================================= */
