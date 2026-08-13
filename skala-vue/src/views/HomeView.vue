@@ -1,23 +1,25 @@
 <script setup>
-import { ref, computed, watch, watchEffect, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useConfigStore } from '@/stores/configStore'
 import {
   WORLD_DESTINATIONS,
   fetchLiveWeatherData,
   getCurrentUserLocation,
   fetchBaseCities,
   fetchCountryFlagsApi,
+  searchCitiesGeocoding,
 } from '@/services/weatherService'
-import RadarHeroBackdrop from '@/components/weather/RadarHeroBackdrop.vue'
-import WeatherControls from '@/components/weather/WeatherControls.vue'
 import WeatherLiveCard from '@/components/weather/WeatherLiveCard.vue'
 import WeatherStatsSummary from '@/components/weather/WeatherStatsSummary.vue'
 import WeatherDetailModal from '@/components/weather/WeatherDetailModal.vue'
 import WindySettingsModal from '@/components/weather/WindySettingsModal.vue'
 
 // ==========================================
-// 1. 반응형 상태 (ref)
+// 1. 상태 관리 (State)
 // ==========================================
+const configStore = useConfigStore()
+
 const worldWeatherList = ref([])
 const countryFlags = ref({})
 const RESTCOUNTRIES_API_KEY = import.meta.env.VITE_RESTCOUNTRIES_API || ''
@@ -26,30 +28,43 @@ const isLoadingLocation = ref(false)
 const fetchError = ref('')
 const lastUpdated = ref('')
 
-// 현재 탐험 중인 활성 여행지 (접속 시 랜덤 선택)
+// 사이드바 열림/닫힘 상태
+const isSidebarOpen = ref(true)
+
+// 현재 활성 여행지 (지도 중심 및 HUD 기준)
 const activeDestination = ref(
   WORLD_DESTINATIONS[Math.floor(Math.random() * WORLD_DESTINATIONS.length)],
 )
 
-// 레이더 배경 레이어 및 전체 지도 조작 모드 상태
+// Windy 레이더 레이어 상태
 const selectedLayer = ref('wind') // wind, rain, temp, clouds, waves
-const isMapInteractive = ref(false) // 전체 지도 직접 조작 모드
+const layers = [
+  { id: 'wind', label: '💨 바람', desc: 'Wind' },
+  { id: 'rain', label: '🌧️ 비/레이더', desc: 'Radar' },
+  { id: 'temp', label: '🌡️ 기온', desc: 'Temp' },
+  { id: 'clouds', label: '☁️ 구름', desc: 'Clouds' },
+  { id: 'waves', label: '🌊 파도', desc: 'Waves' },
+]
 
-// 검색, 대륙, 카테고리 및 정렬 상태
+// 검색, 필터, 정렬 상태
 const searchQuery = ref('')
-const selectedContinent = ref('전체')
-const selectedCategory = ref('전체')
-const sortBy = ref('score-desc') // 기본: 여행 쾌적 지수 높은 순
+const searchResults = ref([])
+const isSearching = ref(false)
+const showSearchDropdown = ref(false)
+let debounceTimer = null
 
-// 상태 바 문구
-const selectedCityInfo = ref('원하는 여행지를 검색하거나 카드를 클릭해 보세요.')
+const selectedContinent = ref('전체')
+const continents = ['전체', '아시아', '유럽', '아메리카', '오세아니아']
+
+const selectedCategory = ref('전체')
+const sortBy = ref('score-desc')
 
 // 모달 상태
 const detailCity = ref(null)
 const showSettingsModal = ref(false)
 
 // ==========================================
-// 2. 전체 화면 Windy 레이더 iframe URL 계산
+// 2. Windy 레이더 지도 URL (Computed)
 // ==========================================
 const embedUrl = computed(() => {
   const lat = activeDestination.value?.lat ?? 37.5665
@@ -58,22 +73,16 @@ const embedUrl = computed(() => {
 })
 
 // ==========================================
-// 3. 실시간 데이터 로드
+// 3. 실시간 기상 데이터 호출
 // ==========================================
 const loadWeatherData = async () => {
   isLoading.value = true
   fetchError.value = ''
   try {
-    // 1. Base 도시 로드 (cities.json 우선)
     const baseList = await fetchBaseCities()
-
-    // 2. 실시간 날씨 데이터 호출
     const data = await fetchLiveWeatherData(baseList)
-
-    // 3. 국기 이미지 가져오기
     countryFlags.value = await fetchCountryFlagsApi(RESTCOUNTRIES_API_KEY)
 
-    // 4. 국기 URL 바인딩
     worldWeatherList.value = data.map((city) => ({
       ...city,
       flagUrl:
@@ -88,7 +97,6 @@ const loadWeatherData = async () => {
       second: '2-digit',
     })
 
-    // 현재 활성 여행지가 있으면 실시간 데이터로 갱신
     if (activeDestination.value) {
       const match = worldWeatherList.value.find((c) => c.id === activeDestination.value.id)
       if (match) activeDestination.value = match
@@ -102,7 +110,7 @@ const loadWeatherData = async () => {
 }
 
 // ==========================================
-// 4. Computed (필터 및 정렬)
+// 4. 필터 및 정렬 (Computed)
 // ==========================================
 const categoryOptions = computed(() => {
   const categories = worldWeatherList.value.map((item) => item.category)
@@ -110,13 +118,10 @@ const categoryOptions = computed(() => {
   return unique.length > 1 ? unique : ['전체', '맑음', '구름', '흐림', '비', '눈']
 })
 
-// 검색어 + 대륙 + 날씨 카테고리 + 정렬 결합
 const filteredWorldList = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
-  // 1) 필터링
   let list = worldWeatherList.value.filter((item) => {
-    // 검색어 (도시명, 영문명, 국가명, 태그)
     const matchesQuery =
       !query ||
       item.name.toLowerCase().includes(query) ||
@@ -124,30 +129,27 @@ const filteredWorldList = computed(() => {
       (item.country && item.country.toLowerCase().includes(query)) ||
       (item.tag && item.tag.toLowerCase().includes(query))
 
-    // 대륙 필터
     const matchesContinent =
       selectedContinent.value === '전체' || item.continent === selectedContinent.value
 
-    // 날씨 상태 카테고리 필터
     const matchesCategory =
       selectedCategory.value === '전체' || item.category === selectedCategory.value
 
     return matchesQuery && matchesContinent && matchesCategory
   })
 
-  // 2) 정렬
   switch (sortBy.value) {
-    case 'score-desc': // 🌟 여행 쾌적 지수 높은 순
+    case 'score-desc':
       return [...list].sort((a, b) => (b.travelScore ?? 0) - (a.travelScore ?? 0))
-    case 'temp-desc': // 🔥 기온 높은 순
+    case 'temp-desc':
       return [...list].sort((a, b) => b.temp - a.temp)
-    case 'temp-asc': // ❄️ 기온 낮은 순
+    case 'temp-asc':
       return [...list].sort((a, b) => a.temp - b.temp)
-    case 'name-asc': // 🔤 도시명 가나다순
+    case 'name-asc':
       return [...list].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-    case 'wind-desc': // 💨 풍속 빠른 순
+    case 'wind-desc':
       return [...list].sort((a, b) => b.windSpeed - a.windSpeed)
-    case 'humidity-desc': // 💧 습도 높은 순
+    case 'humidity-desc':
       return [...list].sort((a, b) => b.humidity - a.humidity)
     default:
       return list
@@ -155,26 +157,36 @@ const filteredWorldList = computed(() => {
 })
 
 // ==========================================
-// 5. 감시자 (watch, watchEffect)
+// 5. 검색어 지오코딩 자동완성 Watcher
 // ==========================================
-watch(activeDestination, (newDest) => {
-  if (newDest) {
-    selectedCityInfo.value = `✈️ [${newDest.name}, ${newDest.country}] 기온 ${newDest.temp ?? ''}°C, 여행 쾌적도: ${newDest.travelScore ?? 85}점 (${newDest.travelGrade ?? '여행하기 좋음'})`
+watch(searchQuery, (newVal) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  const trimmed = newVal.trim()
+  if (trimmed.length < 2) {
+    searchResults.value = []
+    showSearchDropdown.value = false
+    return
   }
-})
 
-watchEffect(() => {
-  console.log(
-    `🌍 [watchEffect] 여행지 검색: "${searchQuery.value}", 대륙: "${selectedContinent.value}", 정렬: "${sortBy.value}" (표시: ${filteredWorldList.value.length}개)`,
-  )
+  isSearching.value = true
+  debounceTimer = setTimeout(async () => {
+    try {
+      const results = await searchCitiesGeocoding(trimmed)
+      searchResults.value = results
+      showSearchDropdown.value = results.length > 0
+    } catch (e) {
+      console.error('검색 실패:', e)
+    } finally {
+      isSearching.value = false
+    }
+  }, 300)
 })
 
 // ==========================================
 // 6. 사용자 액션 핸들러
 // ==========================================
-
-// 여행지 선택 (검색/칩/카드 클릭)
 const handleSelectDestination = async (dest) => {
+  showSearchDropdown.value = false
   const existing = worldWeatherList.value.find((c) => c.id === dest.id)
   if (existing) {
     activeDestination.value = existing
@@ -182,17 +194,18 @@ const handleSelectDestination = async (dest) => {
     activeDestination.value = dest
     try {
       const [enriched] = await fetchLiveWeatherData([dest])
-      if (enriched) activeDestination.value = enriched
+      if (enriched) {
+        activeDestination.value = enriched
+        if (!worldWeatherList.value.some((c) => c.id === enriched.id)) {
+          worldWeatherList.value = [enriched, ...worldWeatherList.value]
+        }
+      }
     } catch (e) {
       console.warn('단일 날씨 보강 실패:', e)
     }
   }
-
-  // 상단 HUD로 부드럽게 스크롤
-  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// 🎲 랜덤 여행지 선택
 const handleRandomDestination = () => {
   if (worldWeatherList.value.length === 0) return
   const currentId = activeDestination.value?.id
@@ -200,11 +213,9 @@ const handleRandomDestination = () => {
   const randomPick = candidates[Math.floor(Math.random() * candidates.length)]
   if (randomPick) {
     activeDestination.value = randomPick
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-// 📍 내 위치 날씨 탐색
 const handleMyLocation = async () => {
   isLoadingLocation.value = true
   try {
@@ -216,7 +227,6 @@ const handleMyLocation = async () => {
         ...worldWeatherList.value.filter((c) => c.id !== 'my_location'),
       ]
       activeDestination.value = enriched
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   } catch (err) {
     alert(err.message || '현재 위치를 가져오지 못했습니다. 위치 권한을 확인해주세요.')
@@ -233,554 +243,1221 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="travel-home-container">
-    <!-- 🌟 1. 전체 화면 고정 배경: 실시간 Windy 레이더 지도 -->
-    <div class="global-windy-backdrop" :class="{ 'map-interactive': isMapInteractive }">
+  <div class="gis-container">
+    <!-- ========================================== -->
+    <!-- 🗺️ 1. 메인 뷰: 화면 100% 채우는 인터랙티브 Windy 지도 -->
+    <!-- ========================================== -->
+    <div class="gis-map-viewport">
       <iframe
         :key="`${activeDestination?.lat}-${activeDestination?.lon}-${selectedLayer}`"
         :src="embedUrl"
-        class="windy-fullscreen-iframe"
-        title="Live Fullscreen Windy Weather Radar"
+        class="windy-gis-iframe"
+        title="Live Interactive Windy Weather Radar"
         loading="lazy"
       ></iframe>
+
+      <!-- 지도 좌상단: 실시간 관측 현황 & 레이어 스위처 -->
+      <div class="map-floating-top">
+        <div class="radar-status-badge">
+          <span class="live-dot"></span>
+          <span class="radar-text">
+            LIVE RADAR: <strong>{{ activeDestination?.name }}</strong> ({{
+              activeDestination?.country
+            }})
+          </span>
+        </div>
+
+        <div class="floating-layer-pills">
+          <button
+            v-for="ly in layers"
+            :key="ly.id"
+            type="button"
+            class="btn-floating-pill"
+            :class="{ active: selectedLayer === ly.id }"
+            @click="selectedLayer = ly.id"
+            :title="`${ly.label} (${ly.desc}) 레이어로 전환`"
+          >
+            {{ ly.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 지도 좌하단: 새로고침 / 퀵 액션 / 동기화 시각 -->
+      <div class="map-floating-bottom">
+        <div class="floating-quick-actions">
+          <button
+            type="button"
+            class="btn-floating-action"
+            :disabled="isLoading"
+            @click="loadWeatherData"
+            title="실시간 날씨 새로고침"
+          >
+            <span class="action-icon" :class="{ spin: isLoading }">🔄</span>
+            <span class="action-text">새로고침</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-floating-action"
+            @click="handleRandomDestination"
+            title="세계 다른 여행지로 즉시 이동"
+          >
+            <span class="action-icon">🎲</span>
+            <span class="action-text">랜덤 여행지</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-floating-action"
+            :disabled="isLoadingLocation"
+            @click="handleMyLocation"
+            title="내 현재 위치 날씨 및 레이더 탐색"
+          >
+            <span class="action-icon">📍</span>
+            <span class="action-text">{{ isLoadingLocation ? '위치 탐색중...' : '내 위치' }}</span>
+          </button>
+        </div>
+
+        <div v-if="lastUpdated" class="floating-sync-badge">
+          <span>동기화: {{ lastUpdated }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- 🌟 2. Teleport to body: 최상단 z-index로 100% 가려짐 없는 전환 스위치 -->
-    <Teleport to="body">
-      <div class="global-floating-map-toggle">
-        <div v-if="isMapInteractive" class="map-mode-indicator">
-          <span class="live-pulse"></span>
-          <span
-            ><strong>{{ activeDestination?.name }}</strong> 레이더 직접 조작 중</span
-          >
-        </div>
+    <!-- ========================================== -->
+    <!-- 🧳 2. 우측 사이드바: 지도 위 플로팅 글래스모피즘 패널 -->
+    <!-- ========================================== -->
+    <aside class="gis-sidebar" :class="{ collapsed: !isSidebarOpen }">
+      <!-- 사이드바 접기/펼치기 토글 탭 -->
+      <button
+        type="button"
+        class="btn-sidebar-toggle"
+        @click="isSidebarOpen = !isSidebarOpen"
+        :title="isSidebarOpen ? '사이드바 접기 (지도 넓게 보기)' : '사이드바 열기 (목록 보기)'"
+        :aria-label="isSidebarOpen ? '사이드바 접기' : '사이드바 열기'"
+      >
+        <span class="toggle-icon">{{ isSidebarOpen ? '❯' : '❮' }}</span>
+        <span class="toggle-text">{{ isSidebarOpen ? '접기' : '목록' }}</span>
+      </button>
 
-        <button
-          type="button"
-          class="btn-global-view-switch"
-          :class="{ 'mode-map': isMapInteractive }"
-          @click="isMapInteractive = !isMapInteractive"
-        >
-          <span class="icon">{{ isMapInteractive ? '🧳' : '🗺️' }}</span>
-          <span class="text">{{
-            isMapInteractive ? '날씨 대시보드로 돌아가기' : '풀스크린 레이더 지도 보기'
-          }}</span>
-        </button>
-      </div>
-    </Teleport>
+      <!-- 사이드바 내부 스크롤 컨테이너 -->
+      <div class="sidebar-scroll-content">
+        <!-- 1) 사이드바 헤더: 타이틀 및 단위/설정 제어 -->
+        <div class="sidebar-header-card">
+          <div class="header-top-row">
+            <div class="brand-group">
+              <span class="brand-emoji">🌍</span>
+              <h1 class="brand-title">세계 여행 날씨</h1>
+            </div>
 
-    <!-- 🌟 3. 전면 오버레이: 글래스모피즘 여행 대시보드 UI 레이어 -->
-    <div v-show="!isMapInteractive" class="dashboard-glass-layer">
-      <!-- 상단: 글래스모피즘 HUD 여행 가이드 -->
-      <section v-if="activeDestination" class="radar-hero-stage">
-        <RadarHeroBackdrop
-          :destination="activeDestination"
-          :is-loading-location="isLoadingLocation"
-          :selected-layer="selectedLayer"
-          :is-map-interactive="isMapInteractive"
-          @update:selected-layer="(val) => (selectedLayer = val)"
-          @toggle-map-mode="isMapInteractive = !isMapInteractive"
-          @select-destination="handleSelectDestination"
-          @random-destination="handleRandomDestination"
-          @my-location="handleMyLocation"
-          @open-forecast-modal="(dest) => (detailCity = dest)"
-        />
-      </section>
+            <div class="header-tools">
+              <!-- 단위 토글 -->
+              <button
+                type="button"
+                class="tool-btn unit-toggle-btn"
+                @click="configStore.toggleUnit"
+                :title="`현재 단위: ${configStore.unit === 'celsius' ? '섭씨(℃)' : '화씨(℉)'}`"
+              >
+                <span class="unit-sym">{{ configStore.unitSymbol }}</span>
+                <span>{{ configStore.unit === 'celsius' ? '℃' : '℉' }}</span>
+              </button>
 
-      <!-- 세계 주요 도시 실시간 현황 섹션 -->
-      <section class="world-cities-section">
-        <div class="section-title-wrap glass-card">
-          <div class="title-left">
-            <h2>🌍 세계 주요 여행지 실시간 기상 현황</h2>
-            <p class="sub-desc">
-              카드를 클릭하면 전체 배경 레이더 지도가 해당 도시 좌표로 실시간 이동합니다.
-            </p>
+              <!-- Windy 설정 모달 버튼 -->
+              <button
+                type="button"
+                class="tool-btn settings-btn"
+                @click="showSettingsModal = true"
+                title="Windy 레이더 설정"
+              >
+                ⚙️
+              </button>
+            </div>
           </div>
-          <span v-if="lastUpdated" class="sync-time">최근 업데이트: {{ lastUpdated }}</span>
+
+          <!-- 실시간 검색창 -->
+          <div class="sidebar-search-box">
+            <span class="search-ico">🔍</span>
+            <input
+              type="text"
+              v-model="searchQuery"
+              @focus="showSearchDropdown = searchResults.length > 0"
+              placeholder="도시·국가·관광지 검색..."
+              class="sidebar-search-input"
+            />
+            <button
+              v-if="searchQuery"
+              type="button"
+              class="btn-search-clear"
+              @click="searchQuery = ''"
+            >
+              ✕
+            </button>
+
+            <!-- 자동완성 검색 결과 드롭다운 -->
+            <div v-if="showSearchDropdown && searchResults.length > 0" class="search-drop-panel">
+              <div
+                v-for="res in searchResults"
+                :key="res.id"
+                class="search-drop-item"
+                @click="handleSelectDestination(res)"
+              >
+                <span class="drop-icon">📍</span>
+                <div class="drop-info">
+                  <span class="drop-name"
+                    ><strong>{{ res.name }}</strong></span
+                  >
+                  <span class="drop-country">{{ res.country || res.tag }}</span>
+                </div>
+                <span class="drop-arrow">이동 ❯</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 대륙 필터 칩 -->
+          <div class="filter-chip-row continent-chips">
+            <button
+              v-for="c in continents"
+              :key="c"
+              type="button"
+              class="filter-chip"
+              :class="{ active: selectedContinent === c }"
+              @click="selectedContinent = c"
+            >
+              {{ c }}
+            </button>
+          </div>
+
+          <!-- 날씨 상태 및 정렬 바 -->
+          <div class="filter-bottom-bar">
+            <div class="weather-category-chips">
+              <button
+                v-for="cat in categoryOptions"
+                :key="cat"
+                type="button"
+                class="weather-chip"
+                :class="{ active: selectedCategory === cat }"
+                @click="selectedCategory = cat"
+              >
+                {{ cat }}
+              </button>
+            </div>
+
+            <select v-model="sortBy" class="sidebar-sort-select">
+              <option value="score-desc">🌟 쾌적순</option>
+              <option value="temp-desc">🔥 고온순</option>
+              <option value="temp-asc">❄️ 저온순</option>
+              <option value="name-asc">🔤 가나다순</option>
+              <option value="wind-desc">💨 바람순</option>
+              <option value="humidity-desc">💧 습도순</option>
+            </select>
+          </div>
         </div>
 
-        <!-- 컨트롤 툴바 (대륙 탭, 날씨 필터, 정렬, 단위변환) -->
-        <WeatherControls
-          :search-query="searchQuery"
-          :selected-continent="selectedContinent"
-          :selected-category="selectedCategory"
-          :sort-by="sortBy"
-          :is-loading="isLoading"
-          :category-options="categoryOptions"
-          @update:search-query="(val) => (searchQuery = val)"
-          @update:selected-continent="(val) => (selectedContinent = val)"
-          @update:selected-category="(val) => (selectedCategory = val)"
-          @update:sort-by="(val) => (sortBy = val)"
-          @refresh="loadWeatherData"
-          @open-settings="showSettingsModal = true"
-        />
+        <!-- 2) 현재 선택된 여행지 HUD 카드 -->
+        <div v-if="activeDestination" class="active-hud-card">
+          <div class="hud-top">
+            <div class="hud-dest-titles">
+              <div class="hud-country-tag">
+                <img
+                  v-if="activeDestination.flagUrl"
+                  :src="activeDestination.flagUrl"
+                  alt="flag"
+                  class="mini-flag-img"
+                />
+                <span>{{ activeDestination.country }}</span>
+              </div>
+              <h2 class="hud-dest-name">
+                {{ activeDestination.name }}
+                <span class="hud-eng">{{ activeDestination.engName }}</span>
+              </h2>
+            </div>
 
-        <!-- 실시간 통계 요약 & 상태 바 -->
-        <WeatherStatsSummary
-          :weather-list="filteredWorldList"
-          :selected-city-info="selectedCityInfo"
-        />
+            <!-- 여행 쾌적 지수 뱃지 -->
+            <div class="hud-score-badge" :class="activeDestination.travelScoreClass">
+              <span class="score-num">{{ activeDestination.travelScore }}</span>
+              <span class="score-label">{{ activeDestination.travelGrade }}</span>
+            </div>
+          </div>
 
-        <!-- 로딩 인디케이터 -->
-        <div v-if="isLoading && worldWeatherList.length === 0" class="loading-grid-box glass-card">
-          <div class="spinner"></div>
-          <p>전 세계 실시간 기상 관측망을 연결하고 있습니다...</p>
+          <!-- 기온 & 체감온도 & 상태 -->
+          <div class="hud-weather-row">
+            <div class="hud-temp-block">
+              <span class="hud-weather-icon">{{ activeDestination.icon }}</span>
+              <div class="hud-temp-texts">
+                <span class="hud-current-temp">{{
+                  configStore.formatTemp(activeDestination.temp)
+                }}</span>
+                <span class="hud-feels-temp">
+                  체감 {{ configStore.formatTemp(activeDestination.apparentTemp) }} ·
+                  {{ activeDestination.status }}
+                </span>
+              </div>
+            </div>
+
+            <div class="hud-mini-metrics">
+              <div class="hud-m-item" title="습도">
+                <span class="m-ico">💧</span>
+                <span class="m-val">{{ activeDestination.humidity }}%</span>
+              </div>
+              <div class="hud-m-item" title="풍속">
+                <span class="m-ico">💨</span>
+                <span class="m-val">{{ activeDestination.windSpeed }}km/h</span>
+              </div>
+              <div class="hud-m-item" title="강수량">
+                <span class="m-ico">🌧️</span>
+                <span class="m-val">{{ activeDestination.precipitation }}mm</span>
+              </div>
+              <div class="hud-m-item" title="기압">
+                <span class="m-ico">🧭</span>
+                <span class="m-val">{{ activeDestination.pressure }}hPa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 팁 코멘트 & 상세 모달 버튼 -->
+          <div class="hud-footer-row">
+            <div class="hud-advice-strip" v-if="activeDestination.travelVerdict">
+              <span class="advice-ico">💡</span>
+              <span class="advice-txt">{{ activeDestination.travelVerdict }}</span>
+            </div>
+
+            <button
+              type="button"
+              class="btn-open-forecast"
+              @click="detailCity = activeDestination"
+            >
+              ⏱️ 7일간 상세 예보 보기 ❯
+            </button>
+          </div>
         </div>
 
-        <!-- 에러 배너 -->
-        <div v-else-if="fetchError" class="error-banner glass-card">
-          <span>⚠️ {{ fetchError }}</span>
-          <button @click="loadWeatherData" class="btn-retry">다시 시도</button>
-        </div>
-
-        <!-- 세계 도시 카드 그리드 -->
-        <div v-else class="world-grid">
-          <WeatherLiveCard
-            v-for="city in filteredWorldList"
-            :key="city.id"
-            :city-item="city"
-            :is-selected="activeDestination?.id === city.id"
-            @select-city="handleSelectDestination"
-            @view-detail="(dest) => (detailCity = dest)"
-            @view-windy-map="handleSelectDestination"
+        <!-- 3) 통계 요약 바 -->
+        <div class="sidebar-stats-row">
+          <WeatherStatsSummary
+            :weather-list="filteredWorldList"
+            :selected-city-info="`총 ${filteredWorldList.length}개 도시 모니터링 중`"
           />
         </div>
 
-        <!-- 검색 결과 없음 -->
-        <div v-if="filteredWorldList.length === 0 && !isLoading" class="empty-world-box glass-card">
-          <span class="empty-emoji">🛫</span>
-          <h3>일치하는 세계 여행지가 없습니다</h3>
-          <p>'{{ searchQuery }}' 조건에 맞는 도시를 찾을 수 없습니다.</p>
-          <button
-            class="btn-reset-filter"
-            @click="
-              () => {
-                searchQuery = ''
-                selectedContinent = '전체'
-                selectedCategory = '전체'
-                sortBy = 'score-desc'
-              }
-            "
+        <!-- 4) 도시 카드 리스트 -->
+        <div class="sidebar-cards-section">
+          <div class="section-badge-row">
+            <span class="list-heading">🌍 세계 주요 도시 목록 ({{ filteredWorldList.length }})</span>
+            <span class="list-tip">클릭 시 지도 이동</span>
+          </div>
+
+          <!-- 로딩 상태 -->
+          <div v-if="isLoading && worldWeatherList.length === 0" class="sidebar-loading-box">
+            <div class="spinner"></div>
+            <p>실시간 세계 기상 관측망 로드 중...</p>
+          </div>
+
+          <!-- 에러 상태 -->
+          <div v-else-if="fetchError" class="sidebar-error-box">
+            <span>⚠️ {{ fetchError }}</span>
+            <button @click="loadWeatherData" class="btn-retry">재시도</button>
+          </div>
+
+          <!-- 빈 목록 상태 -->
+          <div
+            v-else-if="filteredWorldList.length === 0 && !isLoading"
+            class="sidebar-empty-box"
           >
-            필터 초기화
-          </button>
-        </div>
-      </section>
-
-      <!-- 하단: 실습 및 과제 아카이브 포털 -->
-      <section class="portal-archive-section glass-card">
-        <div class="portal-header">
-          <h3>📖 Vue Learning Lab 학습 아카이브</h3>
-          <p>기초 디렉티브 문법 실습부터 컴포지션 API 날씨 과제까지 언제든 확인할 수 있습니다.</p>
-        </div>
-
-        <div class="portal-grid">
-          <div class="portal-card">
-            <div class="portal-icon">💻</div>
-            <h4>1일차 실습 코드</h4>
-            <p>
-              반응형 데이터(ref), v-html, v-text, v-bind, v-if, v-for 등 Vue 기초 핵심 문법 모음
-            </p>
-            <RouterLink to="/practice/day1" class="btn-portal">1일차 실습 보기 ❯</RouterLink>
-          </div>
-
-          <div class="portal-card">
-            <div class="portal-icon">⚡</div>
-            <h4>2일차 실습 코드</h4>
-            <p>v-pre, v-cloak, v-once, v-memo, v-on(이벤트 수식어), v-model(폼 바인딩)</p>
-            <RouterLink to="/practice/day2" class="btn-portal">2일차 실습 보기 ❯</RouterLink>
-          </div>
-
-          <div class="portal-card highlight">
-            <div class="portal-icon">📝</div>
-            <h4>일일 과제 확인</h4>
-            <p>
-              Mockup 날씨 대시보드부터 Composition API, 컴포넌트 분리, 라우터, Pinia 스토어 과제
-            </p>
-            <RouterLink to="/assignment/day1" class="btn-portal highlight"
-              >과제 모음 보기 ❯</RouterLink
+            <span>🛫</span>
+            <p>일치하는 여행지가 없습니다.</p>
+            <button
+              type="button"
+              class="btn-reset-filters"
+              @click="
+                () => {
+                  searchQuery = ''
+                  selectedContinent = '전체'
+                  selectedCategory = '전체'
+                  sortBy = 'score-desc'
+                }
+              "
             >
+              필터 초기화
+            </button>
+          </div>
+
+          <!-- 카드 리스트 -->
+          <div v-else class="sidebar-cards-list">
+            <WeatherLiveCard
+              v-for="city in filteredWorldList"
+              :key="city.id"
+              :city-item="city"
+              :is-selected="activeDestination?.id === city.id"
+              @select-city="handleSelectDestination"
+              @view-detail="(dest) => (detailCity = dest)"
+              @view-windy-map="handleSelectDestination"
+            />
           </div>
         </div>
-      </section>
-    </div>
+
+        <!-- 5) 하단 아카이브 링크 포털 -->
+        <div class="sidebar-portal-footer">
+          <div class="portal-link-group">
+            <RouterLink to="/practice" class="portal-sub-link">
+              <span>💻 실습 코드 ❯</span>
+            </RouterLink>
+            <RouterLink to="/assignment" class="portal-sub-link highlight">
+              <span>📝 일일 과제 모음 ❯</span>
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+    </aside>
 
     <!-- 모달 컴포넌트 -->
     <WeatherDetailModal v-if="detailCity" :city="detailCity" @close="detailCity = null" />
-
     <WindySettingsModal v-if="showSettingsModal" @close="showSettingsModal = false" />
   </div>
 </template>
 
 <style scoped>
-.travel-home-container {
+/* ========================================================= */
+/* 🌟 GIS 메인 컨테이너 (Full Screen Canvas) */
+/* ========================================================= */
+.gis-container {
   position: relative;
-  min-height: 100vh;
-  padding: 0.5rem 0 3rem;
-}
-
-/* 🌟 1. 전체 화면 고정 배경 */
-.global-windy-backdrop {
-  position: fixed;
-  inset: 0;
   width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  background: #121212;
-  pointer-events: none; /* UI 조작 방해 방지 */
+  height: calc(100vh - 58px);
+  overflow: hidden;
+  background: #0d0f12;
 }
 
-.global-windy-backdrop.map-interactive {
-  pointer-events: auto; /* 전체 지도 모드에서는 드래그/줌 가능 */
-  z-index: 10;
+/* ========================================================= */
+/* 🗺️ 메인 영역: 화면 100% 채우는 Windy 레이더 지도 */
+/* ========================================================= */
+.gis-map-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background: #111317;
+  overflow: hidden;
 }
 
-.windy-fullscreen-iframe {
+.windy-gis-iframe {
   width: 100%;
   height: 100%;
   border: none;
+  display: block;
 }
 
-/* 🌟 2. 화면 우상단 최상위 고정: 뷰 모드 전환 스위치 (Teleport) */
-.global-floating-map-toggle {
-  position: fixed;
-  top: 5.25rem;
-  right: 1.5rem;
-  z-index: 999999;
+/* 지도 좌상단 플로팅 컨트롤 */
+.map-floating-top {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.6rem;
   pointer-events: auto;
 }
 
-.map-mode-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: rgba(18, 18, 18, 0.85);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.5rem 0.9rem;
-  color: #fff;
-  font-size: 0.84rem;
-}
-
-.btn-global-view-switch {
+.radar-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 1.1rem;
-  background: rgba(18, 18, 18, 0.85);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  color: #fff;
-  font-size: 0.88rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  font-size: 0.82rem;
+  color: #ffffff;
+  width: fit-content;
+}
+
+.live-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2ecc71;
+  box-shadow: 0 0 10px #2ecc71;
+  animation: pulse-dot 1.8s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.floating-layer-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: fit-content;
+}
+
+.btn-floating-pill {
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
   font-weight: 700;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-.btn-global-view-switch:hover {
-  background: hsla(160, 100%, 37%, 0.9);
-  border-color: hsla(160, 100%, 37%, 1);
+.btn-floating-pill:hover {
+  background: rgba(255, 255, 255, 0.3);
   color: #fff;
 }
 
-.btn-global-view-switch.mode-map {
+.btn-floating-pill.active {
   background: hsla(160, 100%, 37%, 0.95);
-  border-color: hsla(160, 100%, 37%, 1);
   color: #fff;
+  border-color: hsla(160, 100%, 45%, 1);
+  box-shadow: 0 2px 8px rgba(0, 189, 126, 0.4);
 }
 
-.btn-global-view-switch.mode-map:hover {
-  background: hsla(160, 100%, 32%, 1);
-}
-
-.live-pulse {
-  width: 10px;
-  height: 10px;
-  background: #ef4444;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  animation: pulseRed 1.8s infinite;
-}
-
-@keyframes pulseRed {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-/* 🌟 3. 전면 오버레이 글래스모피즘 레이어 */
-.dashboard-glass-layer {
-  position: relative;
-  z-index: 2;
+/* 지도 좌하단 플로팅 컨트롤 */
+.map-floating-bottom {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1rem;
+  z-index: 20;
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.radar-hero-stage {
-  width: 100%;
-}
-
-/* 공통 글래스 카드 룩앤필 */
-.glass-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass-card {
-    background: rgba(0, 0, 0, 0.45);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-}
-
-/* 세계 도시 섹션 */
-.world-cities-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.section-title-wrap {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  padding: 1.2rem 1.5rem;
+  pointer-events: auto;
 }
 
-.title-left h2 {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--color-heading);
-  margin: 0 0 4px;
+.floating-quick-actions {
+  display: flex;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-.sub-desc {
-  font-size: 0.85rem;
-  color: var(--color-text);
-  opacity: 0.75;
-  margin: 0;
-}
-
-.sync-time {
+.btn-floating-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
   font-size: 0.8rem;
-  color: var(--color-text);
-  opacity: 0.6;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.world-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 1.25rem;
+.btn-floating-action:hover:not(:disabled) {
+  background: rgba(0, 189, 126, 0.4);
+  color: #fff;
+  border-color: hsla(160, 100%, 37%, 0.8);
 }
 
-/* 로딩 및 에러 */
-.loading-grid-box {
+.btn-floating-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-icon.spin {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.floating-sync-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+/* ========================================================= */
+/* 🧳 우측 사이드바: 지도 위 플로팅 글래스모피즘 패널 */
+/* ========================================================= */
+.gis-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  height: 100%;
+  z-index: 30;
+  background: rgba(15, 17, 23, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gis-sidebar.collapsed {
+  transform: translateX(100%);
+}
+
+/* 사이드바 접기/펼치기 버튼 */
+.btn-sidebar-toggle {
+  position: absolute;
+  left: -38px;
+  top: 1.25rem;
+  width: 38px;
+  height: 64px;
+  border-radius: 10px 0 0 10px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-right: none;
+  color: #ffffff;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4rem 1rem;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.3);
+  transition: background 0.2s, color 0.2s;
+  z-index: 40;
+}
+
+.btn-sidebar-toggle:hover {
+  background: rgba(0, 189, 126, 0.45);
+  color: #fff;
+}
+
+.toggle-icon {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.toggle-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  writing-mode: horizontal-tb;
+}
+
+/* 사이드바 내부 스크롤 컨테이너 */
+.sidebar-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  color: var(--color-text);
+}
+
+.sidebar-scroll-content::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+.sidebar-scroll-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+.sidebar-scroll-content::-webkit-scrollbar-thumb:hover {
+  background: hsla(160, 100%, 37%, 0.8);
+}
+
+/* 1) 사이드바 헤더 카드 */
+.sidebar-header-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  padding: 0.9rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.brand-emoji {
+  font-size: 1.25rem;
+}
+
+.brand-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.header-tools {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.unit-toggle-btn .unit-sym {
+  color: #2ecc71;
+  font-weight: 800;
+}
+
+/* 검색창 */
+.sidebar-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-ico {
+  position: absolute;
+  left: 10px;
+  font-size: 0.85rem;
   opacity: 0.8;
+  pointer-events: none;
+}
+
+.sidebar-search-input {
+  width: 100%;
+  padding: 0.55rem 2rem 0.55rem 2.2rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sidebar-search-input:focus {
+  border-color: hsla(160, 100%, 37%, 1);
+}
+
+.btn-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 4px;
+}
+
+.search-drop-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: rgba(26, 29, 36, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.search-drop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s;
+}
+
+.search-drop-item:hover {
+  background: hsla(160, 100%, 37%, 0.3);
+}
+
+.drop-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.drop-name {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.drop-country {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.drop-arrow {
+  font-size: 0.72rem;
+  color: hsla(160, 100%, 37%, 1);
+  font-weight: 700;
+}
+
+/* 필터 칩 */
+.filter-chip-row {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  color: #f1f2f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.filter-chip.active {
+  background: #6c5ce7;
+  color: #fff;
+  border-color: #a29bfe;
+  font-weight: 800;
+}
+
+.filter-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.weather-category-chips {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.weather-chip {
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.weather-chip.active {
+  background: hsla(160, 100%, 37%, 0.95);
+  color: #fff;
+  border-color: hsla(160, 100%, 45%, 1);
+  font-weight: 800;
+}
+
+.sidebar-sort-select {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(20, 24, 32, 0.85);
+  color: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 2) 활성 여행지 HUD 카드 */
+.active-hud-card {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(0, 189, 126, 0.6);
+  border-radius: 12px;
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hud-dest-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.hud-country-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.mini-flag-img {
+  width: 18px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.hud-dest-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.hud-eng {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.hud-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  background: #2c3e50;
+  color: #fff;
+  min-width: 54px;
+}
+
+.hud-score-badge.score-best { background: linear-gradient(135deg, #10b981, #059669); }
+.hud-score-badge.score-good { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.hud-score-badge.score-fair { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.hud-score-badge.score-poor { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+.score-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.hud-weather-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  gap: 0.6rem;
+}
+
+.hud-temp-block {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hud-weather-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.hud-temp-texts {
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-current-temp {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.hud-feels-temp {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.hud-mini-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem 0.6rem;
+}
+
+.hud-m-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: #f1f2f6;
+  font-weight: 600;
+}
+
+.hud-footer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.hud-advice-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #86efac;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+}
+
+.btn-open-forecast {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  background: hsla(160, 100%, 37%, 1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: center;
+}
+
+.btn-open-forecast:hover {
+  background: hsla(160, 100%, 32%, 1);
+}
+
+/* 3) 통계 바 */
+.sidebar-stats-row {
+  width: 100%;
+}
+
+/* 4) 도시 카드 섹션 */
+.sidebar-cards-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.section-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.2rem;
+}
+
+.list-heading {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.list-tip {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.sidebar-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sidebar-loading-box,
+.sidebar-error-box,
+.sidebar-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: #6c5ce7;
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: hsla(160, 100%, 37%, 1);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-banner {
-  background: rgba(253, 232, 232, 0.85);
-  color: #c81e1e;
-  border: 1px solid #f8b4b4;
-  padding: 0.75rem 1.2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.btn-retry {
-  background: #c81e1e;
-  color: white;
-  border: none;
+.btn-retry,
+.btn-reset-filters {
   padding: 0.35rem 0.8rem;
-  border-radius: 0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
   cursor: pointer;
 }
 
-.empty-world-box {
-  text-align: center;
-  padding: 3rem 1rem;
+/* 5) 푸터 아카이브 링크 */
+.sidebar-portal-footer {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.portal-link-group {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 0.5rem;
 }
 
-.empty-emoji {
-  font-size: 2.8rem;
-}
-
-.btn-reset-filter {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1.2rem;
-  background: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* 아카이브 포털 */
-.portal-archive-section {
-  padding: 1.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.portal-header h3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  margin-bottom: 0.3rem;
-}
-
-.portal-header p {
-  font-size: 0.88rem;
-  color: var(--color-text);
-  opacity: 0.75;
-}
-
-.portal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.portal-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  box-shadow: none;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  transition: transform 0.2s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  .portal-card {
-    background: rgba(0, 0, 0, 0.45);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-}
-
-.portal-card:hover {
-  border-color: hsla(160, 100%, 37%, 0.8);
-}
-
-.portal-card.highlight {
-  border-color: hsla(160, 100%, 37%, 0.6);
-  background: rgba(0, 184, 148, 0.12);
-}
-
-.portal-icon {
-  font-size: 1.5rem;
-}
-
-.portal-card h4 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  margin: 0;
-}
-
-.portal-card p {
-  font-size: 0.85rem;
-  color: var(--color-text);
-  opacity: 0.75;
-  line-height: 1.4;
+.portal-sub-link {
   flex: 1;
-}
-
-.btn-portal {
-  margin-top: 0.5rem;
-  display: inline-block;
-  padding: 0.5rem 0.8rem;
-  background: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  color: var(--color-text);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
   text-align: center;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  text-decoration: none;
   transition: all 0.2s ease;
 }
 
-.btn-portal:hover {
-  background: hsla(160, 100%, 37%, 0.25);
-  color: hsla(160, 100%, 37%, 1);
+.portal-sub-link:hover {
+  background: rgba(0, 189, 126, 0.4);
+  color: #fff;
+  border-color: hsla(160, 100%, 45%, 1);
 }
 
-.btn-portal.highlight {
-  background: hsla(160, 100%, 37%, 0.9);
+.portal-sub-link.highlight {
+  border-color: rgba(108, 92, 231, 0.6);
+  color: #f1f2f6;
+  background: rgba(108, 92, 231, 0.35);
+}
+
+.portal-sub-link.highlight:hover {
+  background: rgba(108, 92, 231, 0.55);
   color: #fff;
 }
 
-.btn-portal.highlight:hover {
-  background: hsla(160, 100%, 32%, 1);
-}
+/* ========================================================= */
+/* 📱 반응형 (모바일 & 태블릿) */
+/* ========================================================= */
+@media (max-width: 900px) {
+  .gis-container {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 58px);
+  }
 
-@media (max-width: 768px) {
-  .world-grid {
-    grid-template-columns: 1fr;
+  .gis-map-viewport {
+    position: relative;
+    height: 50vh;
+    min-height: 350px;
+  }
+
+  .gis-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    transform: none !important;
+  }
+
+  .btn-sidebar-toggle {
+    display: none;
   }
 }
 </style>

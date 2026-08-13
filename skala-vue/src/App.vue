@@ -25,7 +25,7 @@ import { RouterLink, RouterView } from 'vue-router'
     </nav>
   </header>
 
-  <main class="main-content">
+  <main class="main-content" :class="{ 'gis-home-mode': $route.path === '/' }">
     <RouterView />
   </main>
 </template>
@@ -38,22 +38,17 @@ import { RouterLink, RouterView } from 'vue-router'
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.85rem 1.5rem;
-  margin: 0 -1.5rem 1.25rem -1.5rem;
-  /* background: rgba(255, 255, 255, 0.85); */
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: none;
-  border-left: none;
-  border-right: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  /* border-radius: 0; */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
   .app-header {
-    background: rgba(18, 18, 22, 0.88);
+    background: rgba(18, 18, 22, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   }
@@ -66,7 +61,7 @@ import { RouterLink, RouterView } from 'vue-router'
 }
 
 .app-title {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--color-heading);
   letter-spacing: -0.02em;
@@ -82,9 +77,9 @@ import { RouterLink, RouterView } from 'vue-router'
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.5rem 0.95rem;
+  padding: 0.45rem 0.9rem;
   border-radius: 8px;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text);
   text-decoration: none;
@@ -118,7 +113,18 @@ import { RouterLink, RouterView } from 'vue-router'
 
 .main-content {
   flex: 1;
-  padding-bottom: 3rem;
+}
+
+.main-content:not(.gis-home-mode) {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+}
+
+.main-content.gis-home-mode {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

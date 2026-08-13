@@ -1,6 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+defineOptions({
+  name: 'ComputedPractice',
+})
+
 const count = ref(0)
 const dummy = ref(0) // computed와 무관한 변수
 

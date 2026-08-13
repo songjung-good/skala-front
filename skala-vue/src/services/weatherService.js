@@ -1253,7 +1253,7 @@ export const fetchBaseCities = async () => {
     const res = await fetch('/data/cities.json')
     if (res.ok) return await res.json()
   } catch (err) {
-    console.warn('로컬 cities.json 없음, 기본 리스트 사용')
+    console.warn('로컬 cities.json 없음, 기본 리스트 사용:', err)
   }
   return WORLD_DESTINATIONS
 }

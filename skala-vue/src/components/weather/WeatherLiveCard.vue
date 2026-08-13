@@ -105,41 +105,32 @@ const configStore = useConfigStore()
 
 <style scoped>
 .weather-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  padding: 1.15rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  padding: 0.95rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.65rem;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .weather-card {
-    background: rgba(0, 0, 0, 0.45);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .weather-card:hover {
-  border-color: hsla(160, 100%, 37%, 0.8);
+  background: rgba(255, 255, 255, 0.42);
+  border-color: hsla(160, 100%, 42%, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .weather-card.selected {
   border-color: hsla(160, 100%, 37%, 1);
-  background: rgba(244, 251, 247, 0.35);
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .weather-card.selected {
-    background: rgba(20, 36, 28, 0.5);
-  }
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: 0 0 0 2px hsla(160, 100%, 37%, 0.45), 0 6px 22px rgba(0, 0, 0, 0.3);
 }
 
 /* 상단 */
@@ -156,36 +147,36 @@ const configStore = useConfigStore()
 }
 
 .country-name {
-  font-size: 0.72rem;
-  color: var(--color-text);
-  opacity: 0.85;
-  font-weight: 500;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
 .flag-icon-img {
-  width: 20px;
-  height: 14px;
+  width: 18px;
+  height: 12px;
   object-fit: cover;
   border-radius: 2px;
   vertical-align: middle;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .city-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-heading);
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: #ffffff;
   margin: 1px 0 0;
   line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .city-eng {
   font-size: 0.75rem;
-  color: var(--color-text);
-  opacity: 0.6;
+  color: #cbd5e1;
+  font-weight: 500;
 }
 
 .score-badge-wrap {
@@ -199,46 +190,31 @@ const configStore = useConfigStore()
   font-size: 0.72rem;
   font-weight: 800;
   padding: 2px 7px;
-  border-radius: 0;
+  border-radius: 6px;
   color: white;
   white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.score-best.travel-score-badge {
-  background: #10b981;
-}
-.score-good.travel-score-badge {
-  background: #3b82f6;
-}
-.score-fair.travel-score-badge {
-  background: #f59e0b;
-}
-.score-poor.travel-score-badge {
-  background: #ef4444;
-}
+.score-best.travel-score-badge { background: #10b981; }
+.score-good.travel-score-badge { background: #3b82f6; }
+.score-fair.travel-score-badge { background: #f59e0b; }
+.score-poor.travel-score-badge { background: #ef4444; }
 
 /* 뱃지 */
 .temp-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 0;
+  border-radius: 4px;
   color: #fff;
   white-space: nowrap;
 }
 
-.temp-badge.hot {
-  background: #e74c3c;
-}
-.temp-badge.warm {
-  background: #e67e22;
-}
-.temp-badge.cool {
-  background: #3498db;
-}
-.temp-badge.cold {
-  background: #00cec9;
-}
+.temp-badge.hot { background: #e74c3c; }
+.temp-badge.warm { background: #e67e22; }
+.temp-badge.cool { background: #3498db; }
+.temp-badge.cold { background: #00cec9; }
 
 /* 태그 */
 .city-tag-row {
@@ -246,17 +222,24 @@ const configStore = useConfigStore()
 }
 
 .city-tag {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  color: #e67e22;
+  color: #fef08a;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 7px;
+  border-radius: 4px;
+  width: fit-content;
 }
 
-/* 본문 */
+/* 중앙 */
 .card-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.1rem 0;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
 }
 
 .temp-display {
@@ -266,7 +249,7 @@ const configStore = useConfigStore()
 }
 
 .weather-icon {
-  font-size: 2rem;
+  font-size: 1.85rem;
   line-height: 1;
 }
 
@@ -276,109 +259,95 @@ const configStore = useConfigStore()
 }
 
 .main-temp {
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: var(--color-heading);
-  line-height: 1;
+  color: #ffffff;
+  line-height: 1.1;
 }
 
 .feels-like {
   font-size: 0.72rem;
-  color: var(--color-text);
-  opacity: 0.7;
-  margin-top: 3px;
+  color: #cbd5e1;
 }
 
 .weather-status-text {
-  text-align: right;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
 }
 
 .status-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .status-desc {
-  font-size: 0.72rem;
-  color: var(--color-text);
-  opacity: 0.7;
-  margin-top: 1px;
+  font-size: 0.7rem;
+  color: #cbd5e1;
 }
 
-/* 메트릭 */
+/* 하단 메트릭 */
 .card-metrics {
-  display: flex;
-  justify-content: space-around;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0;
-  padding: 0.45rem 0.5rem;
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .card-metrics {
-    background: rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
 }
 
 .metric-item {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
-  font-size: 0.78rem;
-  color: var(--color-text);
-}
-
-.metric-icon {
-  font-size: 0.8rem;
-}
-
-.metric-val {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #f1f2f6;
   font-weight: 600;
 }
 
-/* 액션 버튼 */
+.metric-icon {
+  font-size: 0.78rem;
+}
+
+/* 카드 액션 버튼 */
 .card-actions {
   display: flex;
   gap: 0.4rem;
-  margin-top: auto;
+  margin-top: 0.15rem;
 }
 
 .btn-card {
   flex: 1;
   padding: 0.45rem 0.6rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  background: rgba(255, 255, 255, 0.25);
-  color: var(--color-text);
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.btn-map {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 
 .btn-map:hover {
-  background: rgba(2, 136, 209, 0.2);
-  color: #0288d1;
-  border-color: #81d4fa;
+  background: rgba(255, 255, 255, 0.38);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .btn-detail {
-  background: rgba(44, 62, 80, 0.8);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+  background: hsla(160, 100%, 37%, 0.9);
+  color: white;
+  border-color: hsla(160, 100%, 45%, 1);
 }
 
 .btn-detail:hover {
-  background: rgba(52, 73, 94, 0.95);
-  border-color: #34495e;
+  background: hsla(160, 100%, 32%, 1);
 }
 </style>

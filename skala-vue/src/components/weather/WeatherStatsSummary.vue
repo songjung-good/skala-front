@@ -55,14 +55,14 @@ const rainyCities = computed(() => {
       </div>
 
       <div v-if="hottestCity" class="stat-card">
-        <span class="stat-label">🔥 최고 기온 도시</span>
+        <span class="stat-label">🔥 최고 기온</span>
         <span class="stat-value hot">
           <strong>{{ hottestCity.name }}</strong> ({{ configStore.formatTemp(hottestCity.temp) }})
         </span>
       </div>
 
       <div v-if="coldestCity" class="stat-card">
-        <span class="stat-label">❄️ 최저 기온 도시</span>
+        <span class="stat-label">❄️ 최저 기온</span>
         <span class="stat-value cold">
           <strong>{{ coldestCity.name }}</strong> ({{ configStore.formatTemp(coldestCity.temp) }})
         </span>
@@ -73,12 +73,12 @@ const rainyCities = computed(() => {
     <div v-if="rainyCities.length > 0" class="rain-alert">
       <span class="alert-icon">🌧️</span>
       <span class="alert-text">
-        <strong>비/강수 소식:</strong>
-        {{ rainyCities.map((c) => c.name).join(', ') }} 지역에 강수가 관측되고 있습니다.
+        <strong>강수 관측:</strong>
+        {{ rainyCities.map((c) => c.name).join(', ') }}
       </span>
     </div>
 
-    <!-- 하단 상태 바 (과제 요구사항 연동) -->
+    <!-- 하단 상태 바 -->
     <div class="status-bar">
       <span class="status-icon">💬</span>
       <span class="status-text">{{ selectedCityInfo }}</span>
@@ -90,99 +90,79 @@ const rainyCities = computed(() => {
 .stats-container {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.45rem;
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0;
-  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .stat-card {
-    background: rgba(0, 0, 0, 0.45);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+  gap: 0.15rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .stat-label {
-  font-size: 0.78rem;
-  color: var(--color-text);
-  opacity: 0.75;
-  font-weight: 500;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
 .stat-value {
-  font-size: 1.05rem;
-  color: var(--color-heading);
+  font-size: 0.95rem;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .stat-value.highlight strong {
-  color: hsla(160, 100%, 37%, 1);
+  color: #2ecc71;
 }
 
 .stat-value.hot strong {
-  color: #e74c3c;
+  color: #f87171;
 }
 
 .stat-value.cold strong {
-  color: #0984e3;
+  color: #60a5fa;
 }
 
 .rain-alert {
-  background: rgba(225, 240, 250, 0.6);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(188, 224, 253, 0.6);
-  border-radius: 0;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
-  color: #0c5460;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.76rem;
+  color: #e0f2fe;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: none;
+  gap: 0.4rem;
 }
 
 .status-bar {
-  background: rgba(232, 245, 233, 0.6);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(200, 230, 201, 0.6);
-  border-radius: 0;
-  padding: 0.7rem 1.2rem;
-  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #2e7d32;
+  color: #86efac;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  transition: all 0.3s ease;
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .status-bar {
-    background: rgba(46, 125, 50, 0.2);
-    border-color: rgba(46, 125, 50, 0.4);
-    color: #81c784;
-  }
-  .rain-alert {
-    background: rgba(12, 84, 96, 0.25);
-    border-color: rgba(12, 84, 96, 0.5);
-    color: #80deea;
-  }
+  gap: 0.5rem;
 }
 </style>
