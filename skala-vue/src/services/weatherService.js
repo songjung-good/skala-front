@@ -1278,13 +1278,18 @@ export const fetchBaseCities = async () => {
   return WORLD_DESTINATIONS
 }
 
-// 2. RestCountries 국기 API 조회 (Authorization 헤더 지원)
+// 2. RestCountries 국기 API 조회 (.env 환경변수 활용)
 export const fetchCountryFlagsApi = async (apiKey) => {
-  const token = apiKey || 'rc_live_661b276fdab1414bb557dff5e770a05c'
+  const token =
+    apiKey ||
+    import.meta.env.REST_COUNTRIES_API_KEY ||
+    import.meta.env.VITE_RESTCOUNTRIES_API ||
+    ''
   const flags = { ...defaultCountryFlags }
+  if (!token) return flags
   try {
     const res = await fetch(
-      'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=250&pretty=1',
+      'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100&pretty=1',
       {
         headers: { Authorization: `Bearer ${token}` },
       },

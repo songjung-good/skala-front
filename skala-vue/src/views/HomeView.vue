@@ -22,7 +22,8 @@ const configStore = useConfigStore()
 
 const worldWeatherList = ref([])
 const countryFlags = ref({})
-const RESTCOUNTRIES_API_KEY = import.meta.env.VITE_RESTCOUNTRIES_API || ''
+const RESTCOUNTRIES_API_KEY =
+  import.meta.env.REST_COUNTRIES_API_KEY || import.meta.env.VITE_RESTCOUNTRIES_API || ''
 const isLoading = ref(true)
 const isLoadingLocation = ref(false)
 const fetchError = ref('')
