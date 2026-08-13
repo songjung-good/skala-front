@@ -23,7 +23,15 @@ const loadDetails = async () => {
   errorMsg.value = ''
   try {
     const data = await fetchCityFullDetails(props.city)
-    fullDetails.value = data
+    // 메인 카드 점수와 100% 일치하도록 보장
+    fullDetails.value = {
+      ...data,
+      travelScore: props.city.travelScore ?? data.travelScore,
+      travelGrade: props.city.travelGrade ?? data.travelGrade,
+      travelScoreClass: props.city.travelScoreClass ?? data.travelScoreClass,
+      travelVerdict: props.city.travelVerdict ?? data.travelVerdict,
+      travelAdvice: props.city.travelAdvice ?? data.travelAdvice,
+    }
   } catch (err) {
     console.error('Failed to load full forecast:', err)
     errorMsg.value = '상세 예보 데이터를 불러오지 못했습니다.'
@@ -36,9 +44,12 @@ onMounted(() => {
   loadDetails()
 })
 
-watch(() => props.city?.id, () => {
-  loadDetails()
-})
+watch(
+  () => props.city?.id,
+  () => {
+    loadDetails()
+  },
+)
 </script>
 
 <template>
@@ -48,7 +59,9 @@ watch(() => props.city?.id, () => {
       <div class="modal-header">
         <div class="header-city">
           <span class="country-badge">{{ city.country }}</span>
-          <h2>{{ city.name }} <span class="eng-text">{{ city.engName }}</span></h2>
+          <h2>
+            {{ city.name }} <span class="eng-text">{{ city.engName }}</span>
+          </h2>
         </div>
         <button class="btn-close" @click="emit('close')" type="button">✕</button>
       </div>
@@ -72,7 +85,10 @@ watch(() => props.city?.id, () => {
               <span class="big-weather-icon">{{ fullDetails.icon }}</span>
               <div class="temp-wrap">
                 <span class="current-temp">{{ configStore.formatTemp(fullDetails.temp) }}</span>
-                <span class="feels-temp">체감 {{ configStore.formatTemp(fullDetails.apparentTemp) }} · {{ fullDetails.status }}</span>
+                <span class="feels-temp">
+                  체감 {{ configStore.formatTemp(fullDetails.apparentTemp) }} ·
+                  {{ fullDetails.status }}
+                </span>
               </div>
             </div>
 
@@ -84,7 +100,8 @@ watch(() => props.city?.id, () => {
 
           <!-- 여행 가이드 코멘트 -->
           <div class="guide-comment-box">
-            <strong>✈️ 여행 가이드:</strong> {{ fullDetails.travelVerdict }} {{ fullDetails.travelAdvice }}
+            <strong>✈️ 여행 가이드:</strong> {{ fullDetails.travelVerdict }}
+            {{ fullDetails.travelAdvice }}
           </div>
 
           <!-- 추천 옷차림 & 짐 싸기 팁 -->
@@ -113,7 +130,9 @@ watch(() => props.city?.id, () => {
             <div class="metric-box">
               <span class="m-icon">💨</span>
               <span class="m-label">풍속 / 풍향</span>
-              <span class="m-val">{{ fullDetails.windSpeed }} km/h ({{ fullDetails.windDirection }}°)</span>
+              <span class="m-val"
+                >{{ fullDetails.windSpeed }} km/h ({{ fullDetails.windDirection }}°)</span
+              >
             </div>
             <div class="metric-box">
               <span class="m-icon">🌧️</span>
@@ -138,7 +157,9 @@ watch(() => props.city?.id, () => {
               >
                 <span class="h-time">{{ hour.time }}</span>
                 <span class="h-icon">{{ hour.icon }}</span>
-                <span class="h-temp"><strong>{{ configStore.formatTemp(hour.temp) }}</strong></span>
+                <span class="h-temp"
+                  ><strong>{{ configStore.formatTemp(hour.temp) }}</strong></span
+                >
                 <span v-if="hour.precipProb > 0" class="h-rain">🌧️ {{ hour.precipProb }}%</span>
                 <span v-else class="h-wind">💨 {{ hour.windSpeed }}km</span>
               </div>
@@ -174,7 +195,9 @@ watch(() => props.city?.id, () => {
 
       <!-- 푸터 -->
       <div class="modal-footer">
-        <span class="coord-text">📍 위도: {{ city.lat.toFixed(4) }}, 경도: {{ city.lon.toFixed(4) }}</span>
+        <span class="coord-text"
+          >📍 위도: {{ city.lat.toFixed(4) }}, 경도: {{ city.lon.toFixed(4) }}</span
+        >
         <button class="btn-confirm" @click="emit('close')">확인</button>
       </div>
     </div>
@@ -196,27 +219,15 @@ watch(() => props.city?.id, () => {
 
 .modal-card {
   background: var(--color-background, #ffffff);
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border-radius: 16px;
   width: 100%;
-  max-width: 660px;
+  max-width: 680px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
-  animation: popIn 0.25s ease-out;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-}
-
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  border: 1px solid var(--color-border);
 }
 
 .modal-header {
@@ -229,23 +240,24 @@ watch(() => props.city?.id, () => {
 
 .header-city {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.6rem;
-  flex-wrap: wrap;
 }
 
 .country-badge {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  background: var(--color-background-soft, #f1f2f6);
+  padding: 2px 8px;
+  border-radius: 4px;
   color: var(--color-text);
-  opacity: 0.8;
+  font-weight: 600;
 }
 
 .header-city h2 {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  color: var(--color-heading);
   margin: 0;
+  color: var(--color-heading);
 }
 
 .eng-text {
@@ -294,7 +306,9 @@ watch(() => props.city?.id, () => {
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .details-content {
@@ -312,6 +326,23 @@ watch(() => props.city?.id, () => {
   border-radius: 14px;
   background: var(--color-background-soft, #f8f9fa);
   border: 1.5px solid var(--color-border);
+}
+
+.hero-briefing.score-best {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+}
+.hero-briefing.score-good {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
+}
+.hero-briefing.score-fair {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%);
+}
+.hero-briefing.score-poor {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%);
 }
 
 .briefing-left {
@@ -434,9 +465,19 @@ watch(() => props.city?.id, () => {
   gap: 2px;
 }
 
-.m-icon { font-size: 1rem; }
-.m-label { font-size: 0.72rem; color: var(--color-text); opacity: 0.7; }
-.m-val { font-size: 0.9rem; font-weight: 700; color: var(--color-heading); }
+.m-icon {
+  font-size: 1rem;
+}
+.m-label {
+  font-size: 0.72rem;
+  color: var(--color-text);
+  opacity: 0.7;
+}
+.m-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
 
 /* 시간별 스크롤 */
 .section-block {
@@ -472,11 +513,26 @@ watch(() => props.city?.id, () => {
   text-align: center;
 }
 
-.h-time { font-size: 0.72rem; opacity: 0.7; }
-.h-icon { font-size: 1.3rem; }
-.h-temp { font-size: 0.85rem; color: var(--color-heading); }
-.h-rain { font-size: 0.68rem; color: #0284c7; font-weight: 600; }
-.h-wind { font-size: 0.65rem; opacity: 0.6; }
+.h-time {
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+.h-icon {
+  font-size: 1.3rem;
+}
+.h-temp {
+  font-size: 0.85rem;
+  color: var(--color-heading);
+}
+.h-rain {
+  font-size: 0.68rem;
+  color: #0284c7;
+  font-weight: 600;
+}
+.h-wind {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
 
 /* 7일 예보 */
 .daily-list {
@@ -496,14 +552,44 @@ watch(() => props.city?.id, () => {
   font-size: 0.85rem;
 }
 
-.d-date { font-weight: 600; width: 100px; }
-.d-status { display: flex; align-items: center; gap: 0.4rem; width: 120px; }
-.d-rain { color: #0284c7; font-weight: 600; width: 80px; text-align: center; }
-.d-rain-none { opacity: 0.6; width: 80px; text-align: center; }
-.d-temps { display: flex; align-items: center; gap: 0.3rem; margin-left: auto; }
-.max-temp { font-weight: 700; color: #e74c3c; }
-.min-temp { font-weight: 600; color: #0284c7; }
-.temp-slash { opacity: 0.4; }
+.d-date {
+  font-weight: 600;
+  width: 100px;
+}
+.d-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 120px;
+}
+.d-rain {
+  color: #0284c7;
+  font-weight: 600;
+  width: 80px;
+  text-align: center;
+}
+.d-rain-none {
+  opacity: 0.6;
+  width: 80px;
+  text-align: center;
+}
+.d-temps {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+.max-temp {
+  font-weight: 700;
+  color: #e74c3c;
+}
+.min-temp {
+  font-weight: 600;
+  color: #0284c7;
+}
+.temp-slash {
+  opacity: 0.4;
+}
 
 .modal-footer {
   padding: 1rem 1.5rem;
