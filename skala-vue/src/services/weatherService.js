@@ -1294,15 +1294,21 @@ export const fetchCountryFlagsApi = async (apiKey) => {
     }
   })
 
-  // 2. 유효한 토큰이 제공된 경우에만 RestCountries v5 API 동기화 시도
+  // 2. 유효한 토큰이 제공된 경우에만 RestCountries v5 API 동기화 시도 (개발환경에서는 Vite Proxy 활용)
   if (token && typeof token === 'string' && token.trim() !== '') {
+    const baseUrl = import.meta.env.DEV ? '/api/restcountries' : 'https://api.restcountries.com'
+    const requestUrl = `${baseUrl}/countries/v5?response_fields=names.common,flag.url_png&limit=100`
     try {
-      const res = await fetch(
-        'https://api.restcountries.com/countries/v5?response_fields=names.common,flag.url_png&limit=100',
-        {
-          headers: { Authorization: `Bearer ${token.trim()}` },
-        },
-      )
+      console.log('🌐 [RestCountries API Request]:', {
+        url: requestUrl,
+        token: `${token.slice(0, 10)}...`,
+        proxied: import.meta.env.DEV,
+      })
+
+      const res = await fetch(requestUrl, {
+        headers: { Authorization: `Bearer ${token.trim()}` },
+      })
+
       if (res.ok) {
         const json = await res.json()
         const objects = json?.data?.objects || []
@@ -1316,9 +1322,19 @@ export const fetchCountryFlagsApi = async (apiKey) => {
           const match = dict[meta.en.toLowerCase()]
           if (match) flags[kr] = match
         })
+        console.log('✅ [RestCountries API Success]: 국기 데이터 동기화 완료')
+      } else {
+        const errBody = await res.text().catch(() => '')
+        console.error('❌ [RestCountries API Error Response]:', {
+          status: res.status,
+          statusText: res.statusText,
+          url: res.url,
+          tokenPreview: `${token.slice(0, 8)}...`,
+          errorResponse: errBody,
+        })
       }
-    } catch {
-      // API 실패 시 사전 등록된 CDN 국기 URL 자동 유지
+    } catch (err) {
+      console.error('❌ [RestCountries Network/Exception Error]:', err)
     }
   }
 

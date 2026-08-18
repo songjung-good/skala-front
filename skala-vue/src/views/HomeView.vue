@@ -99,7 +99,11 @@ const loadWeatherData = async () => {
   try {
     const baseList = await fetchBaseCities()
     const data = await fetchLiveWeatherData(baseList)
-    countryFlags.value = await fetchCountryFlagsApi(RESTCOUNTRIES_API_KEY)
+    try {
+      countryFlags.value = await fetchCountryFlagsApi(RESTCOUNTRIES_API_KEY)
+    } catch (flagErr) {
+      console.error('❌ [HomeView] RestCountries 국기 데이터 조회 중 에러 발생:', flagErr)
+    }
 
     worldWeatherList.value = data.map((city) => ({
       ...city,
@@ -355,9 +359,7 @@ onMounted(async () => {
             <span class="action-text">{{ isLoadingLocation ? '위치 탐색중...' : '내 위치' }}</span>
           </button>
 
-          <span v-if="lastUpdated" class="floating-sync-text">
-            {{ lastUpdated }} 동기화
-          </span>
+          <span v-if="lastUpdated" class="floating-sync-text"> {{ lastUpdated }} 동기화 </span>
         </div>
       </div>
     </div>
@@ -399,7 +401,9 @@ onMounted(async () => {
               >
                 <span class="unit-opt" :class="{ active: configStore.unit === 'celsius' }">℃</span>
                 <span class="unit-divider">/</span>
-                <span class="unit-opt" :class="{ active: configStore.unit === 'fahrenheit' }">℉</span>
+                <span class="unit-opt" :class="{ active: configStore.unit === 'fahrenheit' }"
+                  >℉</span
+                >
               </button>
 
               <!-- Windy 설정 모달 버튼 -->
@@ -481,11 +485,7 @@ onMounted(async () => {
               <span class="advice-txt">{{ activeDestination.travelVerdict }}</span>
             </div>
 
-            <button
-              type="button"
-              class="btn-open-forecast"
-              @click="detailCity = activeDestination"
-            >
+            <button type="button" class="btn-open-forecast" @click="detailCity = activeDestination">
               ⏱️ 7일간 상세 예보 보기 ❯
             </button>
           </div>
@@ -584,7 +584,9 @@ onMounted(async () => {
           <WeatherStatsSummary :weather-list="filteredWorldList" />
 
           <div class="section-badge-row">
-            <span class="list-heading">🌍 세계 주요 도시 목록 ({{ filteredWorldList.length }})</span>
+            <span class="list-heading"
+              >🌍 세계 주요 도시 목록 ({{ filteredWorldList.length }})</span
+            >
             <span class="list-tip">클릭 시 지도 이동</span>
           </div>
 
@@ -601,10 +603,7 @@ onMounted(async () => {
           </div>
 
           <!-- 빈 목록 상태 -->
-          <div
-            v-else-if="filteredWorldList.length === 0 && !isLoading"
-            class="sidebar-empty-box"
-          >
+          <div v-else-if="filteredWorldList.length === 0 && !isLoading" class="sidebar-empty-box">
             <span>🛫</span>
             <p>일치하는 여행지가 없습니다.</p>
             <button
@@ -637,12 +636,21 @@ onMounted(async () => {
 
             <!-- 일부 노출 시 더보기 버튼 -->
             <button
-              v-if="filteredWorldList.length > displayLimit && !searchQuery.trim() && selectedContinent === '전체' && selectedCategory === '전체'"
+              v-if="
+                filteredWorldList.length > displayLimit &&
+                !searchQuery.trim() &&
+                selectedContinent === '전체' &&
+                selectedCategory === '전체'
+              "
               type="button"
               class="btn-expand-list"
               @click="isListExpanded = !isListExpanded"
             >
-              <span>{{ isListExpanded ? '▲ 주요 도시 접기' : `▼ 전체 도시 더보기 (+${filteredWorldList.length - displayLimit}개)` }}</span>
+              <span>{{
+                isListExpanded
+                  ? '▲ 주요 도시 접기'
+                  : `▼ 전체 도시 더보기 (+${filteredWorldList.length - displayLimit}개)`
+              }}</span>
             </button>
           </div>
         </div>
@@ -737,9 +745,18 @@ onMounted(async () => {
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 }
 
 .floating-layer-pills {
@@ -827,7 +844,9 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .floating-sync-text {
@@ -885,7 +904,10 @@ onMounted(async () => {
   justify-content: center;
   gap: 3px;
   box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.35);
-  transition: background 0.2s, color 0.2s, transform 0.2s ease;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s ease;
   z-index: 40;
 }
 
@@ -1292,10 +1314,18 @@ onMounted(async () => {
   min-width: 54px;
 }
 
-.hud-score-badge.score-best { background: linear-gradient(135deg, #10b981, #059669); }
-.hud-score-badge.score-good { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-.hud-score-badge.score-fair { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.hud-score-badge.score-poor { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.hud-score-badge.score-best {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.hud-score-badge.score-good {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+.hud-score-badge.score-fair {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.hud-score-badge.score-poor {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
 
 .score-num {
   font-size: 1.15rem;
